@@ -1,8 +1,8 @@
-// Package provider provides different implementations for compute providers.
-package provider
+// Package cloud provides different implementations for cloud providers.
+package cloud
 
 // A Provider implements the methods necessary to manage Instances on a given
-// compute provider.
+// cloud provider.
 type Provider interface {
 	List() ([]Instance, error)
 	Create(image string) (Instance, error)

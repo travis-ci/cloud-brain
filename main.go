@@ -3,13 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/travis-ci/cloud-brain/cbcontext"
+	"github.com/travis-ci/cloud-brain/cloud"
+	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
-	"github.com/travis-ci/cloud-brain/provider"
-	"github.com/travis-ci/cloud-brain/server"
+	cbhttp "github.com/travis-ci/cloud-brain/http"
 	"github.com/travis-ci/cloud-brain/worker"
 )
 
@@ -18,22 +21,45 @@ func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 
 	db := database.NewMemoryDatabase()
-	provider := &provider.FakeProvider{}
-
+	provider := &cloud.FakeProvider{}
 	mw := worker.NewMemoryWorker()
-	go worker.Run(ctx, "create", mw, &worker.CreateWorker{
-		Provider: provider,
-		DB:       db,
+
+	core := cloudbrain.NewCore(&cloudbrain.CoreConfig{
+		CloudProvider: provider,
+		DB:            db,
+		WorkerBackend: mw,
 	})
 
-	cw := &worker.RefreshWorker{
-		ProviderName: "fake",
-		Provider:     provider,
-		DB:           db,
+	go worker.Run(ctx, "create", mw, worker.WorkerFunc(core.ProviderCreateInstance))
+
+	go runRefresh(ctx, core)
+
+	log.Fatal(http.ListenAndServe(":6060", cbhttp.Handler(ctx, core)))
+}
+
+func runRefresh(ctx context.Context, core *cloudbrain.Core) {
+	var errorCount uint
+	for {
+		err := core.ProviderRefresh(ctx)
+		if err != nil {
+			errorCount++
+		} else {
+			errorCount = 0
+		}
+
+		// TODO(henrikhodne): Make this configurable
+		sleepTime := 1 * time.Duration(errorCount+1) * time.Second
+		if sleepTime > 5*time.Minute {
+			sleepTime = 5 * time.Minute
+		}
+
+		if err != nil {
+			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+				"err":          err,
+				"backoff_time": sleepTime,
+			}).Error("an error occurred when refreshing")
+		}
+
+		time.Sleep(sleepTime)
 	}
-	go cw.Run(ctx)
-
-	server.RunServer(ctx, db, mw)
-
-	log.Fatal(http.ListenAndServe(":6060", nil))
 }

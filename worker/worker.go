@@ -20,6 +20,12 @@ type Worker interface {
 	Work(ctx context.Context, payload []byte) error
 }
 
+type WorkerFunc func(ctx context.Context, payload []byte) error
+
+func (wf WorkerFunc) Work(ctx context.Context, payload []byte) error {
+	return wf(ctx, payload)
+}
+
 type Job struct {
 	Context    context.Context
 	Payload    []byte
