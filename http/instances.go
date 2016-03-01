@@ -43,9 +43,11 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 	if err != nil {
 		// TODO(henrikhodne): Log error
 		respondError(w, http.StatusInternalServerError, nil)
+		return
 	}
 	if instance == nil {
 		respondError(w, http.StatusNotFound, nil)
+		return
 	}
 
 	respondOk(w, instanceToResponse(instance))
