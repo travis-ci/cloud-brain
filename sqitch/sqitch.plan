@@ -1,0 +1,6 @@
+%syntax-version=1.0.0
+%project=cloudbrain
+%uri=https://github.com/travis-ci/cloud-brain/
+
+appschema 2016-03-01T23:01:20Z Henrik Hodne <henrik@travis-ci.org> # Add schema for all cloudbrain objects.
+instances [appschema] 2016-03-01T23:10:50Z Henrik Hodne <henrik@travis-ci.org> # Creates table to track instances.

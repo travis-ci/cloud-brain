@@ -1,21 +1,22 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	cbhttp "github.com/travis-ci/cloud-brain/http"
 	"github.com/travis-ci/cloud-brain/worker"
+	"golang.org/x/net/context"
 )
 
 func main() {
@@ -38,7 +39,14 @@ func main() {
 	}
 	wb := worker.NewRedisWorker(redisPool, "cloud-brain:worker")
 
-	db := database.NewMemoryDatabase()
+	if os.Getenv("DATABASE_URL") == "" {
+		logrus.Fatal("DATABASE_URL env var must be provided")
+	}
+	pgdb, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		logrus.Fatalf("error connecting to DB: %v", err)
+	}
+	db := database.NewPostgresDB(pgdb)
 	provider := &cloud.FakeProvider{}
 
 	core := cloudbrain.NewCore(&cloudbrain.CoreConfig{
