@@ -3,11 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/garyburd/redigo/redis"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
@@ -20,17 +22,35 @@ func main() {
 	ctx := context.Background()
 	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 
+	if os.Getenv("REDIS_URL") == "" {
+		logrus.Fatal("REDIS_URL env var must be provided")
+	}
+	redisPool := &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 3 * time.Minute,
+		Dial: func() (redis.Conn, error) {
+			return redis.DialURL(os.Getenv("REDIS_URL"))
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+	wb := worker.NewRedisWorker(redisPool, "cloud-brain:worker")
+
 	db := database.NewMemoryDatabase()
 	provider := &cloud.FakeProvider{}
-	mw := worker.NewMemoryWorker()
 
 	core := cloudbrain.NewCore(&cloudbrain.CoreConfig{
 		CloudProvider: provider,
 		DB:            db,
-		WorkerBackend: mw,
+		WorkerBackend: wb,
 	})
 
-	go worker.Run(ctx, "create", mw, worker.WorkerFunc(core.ProviderCreateInstance))
+	go func() {
+		err := worker.Run(ctx, "create", wb, worker.WorkerFunc(core.ProviderCreateInstance))
+		logrus.WithField("err", err).Error("create worker crashed")
+	}()
 
 	go runRefresh(ctx, core)
 

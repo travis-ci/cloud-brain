@@ -8,6 +8,20 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/garyburd/redigo/internal",
+			"repository": "https://github.com/garyburd/redigo",
+			"revision": "55d64223b60ff7c6a7f1c391f611038a88a86b01",
+			"branch": "master",
+			"path": "/internal"
+		},
+		{
+			"importpath": "github.com/garyburd/redigo/redis",
+			"repository": "https://github.com/garyburd/redigo",
+			"revision": "55d64223b60ff7c6a7f1c391f611038a88a86b01",
+			"branch": "master",
+			"path": "/redis"
+		},
+		{
 			"importpath": "github.com/getsentry/raven-go",
 			"repository": "https://github.com/getsentry/raven-go",
 			"revision": "1cc47a9463b90f246a0503d4c2e9a55c9459ced3",
