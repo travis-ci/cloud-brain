@@ -12,6 +12,10 @@ import (
 	"github.com/travis-ci/cloud-brain/worker"
 )
 
+// MaxCreateRetries is the number of times the background "create" job will be
+// retried before giving up.
+const MaxCreateRetries = 10
+
 type serializedInstance struct {
 	ID        string  `json:"id"`
 	Provider  string  `json:"provider"`
@@ -106,7 +110,7 @@ func (s *server) handleInstancesCreate(w http.ResponseWriter, req *http.Request)
 		Context:    ctx,
 		Payload:    []byte(id),
 		Queue:      "create",
-		MaxRetries: uint(10),
+		MaxRetries: MaxCreateRetries,
 	})
 
 	w.Header().Set("Content-Type", "application/json")
