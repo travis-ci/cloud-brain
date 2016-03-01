@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/database"
@@ -24,6 +25,11 @@ type errorReply struct {
 }
 
 func (s *server) handleInstancesRetrieve(w http.ResponseWriter, req *http.Request) {
+	ctx := s.ctx
+	if req.Header.Get("X-Request-ID") != "" {
+		ctx = cbcontext.FromUUID(ctx, req.Header.Get("X-Request-ID"))
+	}
+
 	vars := mux.Vars(req)
 	id := vars["id"]
 
@@ -31,16 +37,19 @@ func (s *server) handleInstancesRetrieve(w http.ResponseWriter, req *http.Reques
 	if err == database.ErrInstanceNotFound {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-
 		json.NewEncoder(w).Encode(errorReply{Error: "No instance with that ID"})
+
 		return
 	}
 	if err != nil {
-		// TODO: Log error
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"err": err,
+		}).Error("error getting instance from database")
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-
 		json.NewEncoder(w).Encode(errorReply{Error: "An error occurred retrieving the instance"})
+
 		return
 	}
 
@@ -71,8 +80,8 @@ func (s *server) handleInstancesCreate(w http.ResponseWriter, req *http.Request)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-
 		json.NewEncoder(w).Encode(errorReply{Error: "Problems parsing JSON"})
+
 		return
 	}
 
@@ -82,11 +91,14 @@ func (s *server) handleInstancesCreate(w http.ResponseWriter, req *http.Request)
 		State:    "creating",
 	})
 	if err != nil {
-		// TODO: Log error
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"err": err,
+		}).Error("error creating instance")
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-
 		json.NewEncoder(w).Encode(errorReply{Error: "An error occurred creating the instance"})
+
 		return
 	}
 
@@ -102,7 +114,6 @@ func (s *server) handleInstancesCreate(w http.ResponseWriter, req *http.Request)
 	w.WriteHeader(http.StatusCreated)
 
 	instance := parsedInstance
-
 	instance.ID = id
 	instance.State = "creating"
 	json.NewEncoder(w).Encode(instance)
