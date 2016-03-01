@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 // FakeProvider is an in-memory Provider suitable for tests.
@@ -13,6 +12,20 @@ type FakeProvider struct {
 	instancesMutex sync.Mutex
 	instances      map[string]Instance
 	counter        uint64
+}
+
+// MarkRunning marks a VM as running and gives it a random IP address.
+func (p *FakeProvider) MarkRunning(id string) {
+	p.instancesMutex.Lock()
+	defer p.instancesMutex.Unlock()
+
+	inst := p.instances[id]
+
+	ipAddress := make([]byte, 4)
+	rand.Read(ipAddress)
+	inst.IPAddress = fmt.Sprintf("%d.%d.%d.%d", ipAddress[0], ipAddress[1], ipAddress[2], ipAddress[3])
+	inst.State = InstanceStateRunning
+	p.instances[inst.ID] = inst
 }
 
 // List returns all the instances in the fake provider.
@@ -56,16 +69,6 @@ func (p *FakeProvider) Create(image string) (Instance, error) {
 		}
 		p.instances[inst.ID] = inst
 
-		go func() {
-			time.Sleep(20 * time.Second)
-			p.instancesMutex.Lock()
-			inst.State = InstanceStateRunning
-			ipAddress := make([]byte, 4)
-			rand.Read(ipAddress)
-			inst.IPAddress = fmt.Sprintf("%d.%d.%d.%d", ipAddress[0], ipAddress[1], ipAddress[2], ipAddress[3])
-			p.instances[inst.ID] = inst
-			p.instancesMutex.Unlock()
-		}()
 		return inst, nil
 	}
 

@@ -21,7 +21,7 @@ type RefreshWorker struct {
 
 func (w *RefreshWorker) Run(ctx context.Context) error {
 	for {
-		err := w.refresh(ctx)
+		err := w.RunOnce(ctx)
 		if err != nil {
 			w.errorCount++
 		} else {
@@ -45,7 +45,7 @@ func (w *RefreshWorker) Run(ctx context.Context) error {
 	}
 }
 
-func (w *RefreshWorker) refresh(ctx context.Context) error {
+func (w *RefreshWorker) RunOnce(ctx context.Context) error {
 	instances, err := w.Provider.List()
 	if err != nil {
 		return err
