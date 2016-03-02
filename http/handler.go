@@ -12,12 +12,15 @@ import (
 )
 
 // Handler returns an http.Handler for the API.
-func Handler(ctx context.Context, core *cloudbrain.Core) http.Handler {
+func Handler(ctx context.Context, core *cloudbrain.Core, authTokens []string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/instances/", handleInstances(ctx, core))
 	mux.Handle("/instances", handleInstances(ctx, core))
 
-	return mux
+	return &authWrapper{
+		authTokens: authTokens,
+		handler:    mux,
+	}
 }
 
 func parseRequest(r *http.Request, out interface{}) error {

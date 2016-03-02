@@ -69,6 +69,11 @@ func main() {
 			}(),
 			EnvVar: "CLOUDBRAIN_ADDR",
 		},
+		cli.StringSliceFlag{
+			Name:   "auth-token",
+			Usage:  "authentication token(s) to accept",
+			EnvVar: "CLOUDBRAIN_AUTH_TOKEN",
+		},
 	}
 
 	app.Run(os.Args)
@@ -110,7 +115,7 @@ func mainAction(c *cli.Context) {
 		WorkerBackend: workerBackend,
 	})
 
-	err = http.ListenAndServe(c.String("addr"), cbhttp.Handler(ctx, core))
+	err = http.ListenAndServe(c.String("addr"), cbhttp.Handler(ctx, core, c.StringSlice("auth-token")))
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("ListenAndServe returned error")
 	}
