@@ -20,7 +20,7 @@ To generate a token, use the `cloudbrain-create-token` tool:
 
 ```
 $ cloudbrain-create-token "description of the token"
-time="2016-03-03T03:03:03+00:00" level=info msg="generated token" pid=12345 token=1-b180349faf82840b43ebf27e730f894f
+generated token: 1-b180349faf82840b43ebf27e730f894f
 ```
 
 This will generate the token locally, connect to the database (remember to set the `DATABASE_URL` environment variable), and upload the salt and hash (which are also computed locally).
