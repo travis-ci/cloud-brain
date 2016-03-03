@@ -2,6 +2,9 @@ package cloud
 
 import "testing"
 
+// Ensure that FakeProvider implements the Provider interface
+var _ Provider = &FakeProvider{}
+
 func TestFakeProviderCreate(t *testing.T) {
 	provider := &FakeProvider{}
 
