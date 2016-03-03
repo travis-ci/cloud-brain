@@ -2,6 +2,6 @@
 
 BEGIN;
 
-SELECT pg_catalog.has_schema_privilege('cloudbrain', 'usage');d
+SELECT pg_catalog.has_schema_privilege('cloudbrain', 'usage');
 
 ROLLBACK;
