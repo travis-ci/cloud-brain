@@ -41,26 +41,23 @@ If the token is in any way invalid, a 401 will be returned.
 POST /instances
 ```
 
-``` JSON
-{
-	"provider": "gce",
-	"image": "image-2016-01-01"
-}
-```
-
 #### Input
 
-| Name       | Type     | Description |
-| ---------- | -------- | ----------- |
-| `provider` | `string` | **Required**. The name of the provider to create the instance on. `gce` is the only currently supported provider. |
-| `image`    | `string` | **Required**. The name of the image to use to create the instance. |
+| Name             | Type     | Description |
+| ---------------- | -------- | ----------- |
+| `provider`       | `string` | **Required**. The name of the provider to create the instance on. `gce` is the only currently supported provider. |
+| `image`          | `string` | **Required**. The name of the image to use to create the instance. |
+| `instance_type`  | `string` | Either `standard` (the default) or `premium`, depending on what kind of VM you'd like to start. May not be supported by all providers. |
+| `public_ssh_key` | `string` | The public SSH key to inject into the VM for SSH access. May not be supported by all providers. |
 
 #### Example
 
 ``` JSON
 {
 	"provider": "gce",
-	"image": "image-2016-01-01"
+	"image": "image-2016-01-01",
+	"instance_type": "standard",
+	"public_ssh_key": "ssh-rsa …"
 }
 ```
 
@@ -76,6 +73,8 @@ Location: https://cloud-brain/instances/0d654ef4-75b9-49a6-9f90-f9b1ae3501fc
 	"id": "0d654ef4-75b9-49a6-9f90-f9b1ae3501fc",
 	"provider": "gce",
 	"image": "image-2016-01-01",
+	"instance_type": "standard",
+	"public_ssh_key": "ssh-rsa …",
 	"ip_address": null,
 	"state": "creating"
 }

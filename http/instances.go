@@ -60,7 +60,11 @@ func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.Resp
 		return
 	}
 
-	instance, err := core.CreateInstance(ctx, req.Provider, req.Image)
+	instance, err := core.CreateInstance(ctx, req.Provider, cloudbrain.CreateInstanceAttributes{
+		ImageName:    req.Image,
+		InstanceType: req.InstanceType,
+		PublicSSHKey: req.PublicSSHKey,
+	})
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err)
 		return
@@ -92,6 +96,8 @@ type InstanceResponse struct {
 }
 
 type CreateInstanceRequest struct {
-	Provider string `json:"provider"`
-	Image    string `json:"image"`
+	Provider     string `json:"provider"`
+	Image        string `json:"image"`
+	InstanceType string `json:"instance_type"`
+	PublicSSHKey string `json:"public_ssh_key"`
 }
