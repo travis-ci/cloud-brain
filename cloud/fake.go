@@ -50,7 +50,7 @@ func (p *FakeProvider) List() ([]Instance, error) {
 }
 
 // Create creates an instance in the fake provider.
-func (p *FakeProvider) Create(image string) (Instance, error) {
+func (p *FakeProvider) Create(attrs CreateAttributes) (Instance, error) {
 	if rand.Intn(5) == 0 {
 		return Instance{}, fmt.Errorf("random error occurred")
 	}
@@ -58,11 +58,11 @@ func (p *FakeProvider) Create(image string) (Instance, error) {
 	p.instancesMutex.Lock()
 	defer p.instancesMutex.Unlock()
 
-	if image == "" {
+	if attrs.ImageName == "" {
 		return Instance{}, fmt.Errorf("image is required")
 	}
 
-	if image == "standard-image" {
+	if attrs.ImageName == "standard-image" {
 		count := atomic.AddUint64(&p.counter, 1)
 		inst := Instance{
 			ID:    fmt.Sprintf("instance-standard-image-%d", count),

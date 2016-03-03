@@ -5,17 +5,17 @@ import "testing"
 func TestFakeProviderCreate(t *testing.T) {
 	provider := &FakeProvider{}
 
-	_, err := provider.Create("")
+	_, err := provider.Create(CreateAttributes{ImageName: ""})
 	if err == nil {
 		t.Errorf("expected error, got nil")
 	}
 
-	_, err = provider.Create("nonexistant-image")
+	_, err = provider.Create(CreateAttributes{ImageName: "nonexistant-image"})
 	if err == nil {
 		t.Errorf("expected error, got nil")
 	}
 
-	instance, err := provider.Create("standard-image")
+	instance, err := provider.Create(CreateAttributes{ImageName: "standard-image"})
 	if err != nil {
 		t.Errorf("provider.Create returned error: %v", err)
 	}
