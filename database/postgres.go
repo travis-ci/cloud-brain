@@ -51,6 +51,9 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 		&instance.State,
 		&ipAddress,
 	)
+	if err == sql.ErrNoRows {
+		return Instance{}, ErrInstanceNotFound
+	}
 	if err != nil {
 		return Instance{}, err
 	}
@@ -76,6 +79,9 @@ func (db *PostgresDB) GetInstanceByProviderID(providerName, providerID string) (
 		&instance.State,
 		&ipAddress,
 	)
+	if err == sql.ErrNoRows {
+		return Instance{}, ErrInstanceNotFound
+	}
 	if err != nil {
 		return Instance{}, err
 	}
@@ -99,4 +105,29 @@ func (db *PostgresDB) UpdateInstance(instance Instance) error {
 		instance.ID,
 	)
 	return err
+}
+
+func (db *PostgresDB) GetSaltAndHashForTokenID(tokenID uint64) ([]byte, []byte, error) {
+	var salt, hash []byte
+	err := db.db.QueryRow(
+		"SELECT token_salt, token_hash FROM cloudbrain.auth_tokens WHERE id = $1",
+		tokenID,
+	).Scan(&salt, &hash)
+
+	return salt, hash, err
+}
+
+func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64, error) {
+	var id uint64
+	err := db.db.QueryRow(
+		"INSERT INTO cloudbrain.auth_tokens (description, token_hash, token_salt) VALUES ($1, $2, $3) RETURNING id",
+		description,
+		hash,
+		salt,
+	).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
 }

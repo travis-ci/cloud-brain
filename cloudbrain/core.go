@@ -1,11 +1,15 @@
 package cloudbrain
 
 import (
+	"crypto/subtle"
+	"encoding/hex"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
 	"github.com/travis-ci/cloud-brain/worker"
+	"golang.org/x/crypto/scrypt"
 	"golang.org/x/net/context"
 )
 
@@ -179,6 +183,25 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 	}).Info("refreshed instances")
 
 	return nil
+}
+
+func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
+	salt, hash, err := c.db.GetSaltAndHashForTokenID(tokenID)
+	if err != nil {
+		return false, err
+	}
+
+	decodedToken, err := hex.DecodeString(token)
+	if err != nil {
+		return false, err
+	}
+
+	generatedHash, err := scrypt.Key(decodedToken, salt, 16384, 8, 1, 32)
+	if err != nil {
+		return false, err
+	}
+
+	return subtle.ConstantTimeCompare(generatedHash, hash) == 1, nil
 }
 
 type Instance struct {

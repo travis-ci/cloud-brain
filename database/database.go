@@ -17,6 +17,13 @@ type DB interface {
 
 	// Updates the instance with the given ID
 	UpdateInstance(instance Instance) error
+
+	// GetHashedToken gets the salt and the hashed token for a given token ID.
+	// The returned attributes are salt, hash and an error.
+	GetSaltAndHashForTokenID(tokenID uint64) ([]byte, []byte, error)
+
+	// Insert a token into the database, returns the ID of the token
+	InsertToken(description string, hash, salt []byte) (uint64, error)
 }
 
 type Instance struct {

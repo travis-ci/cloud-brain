@@ -12,6 +12,29 @@ There are two main parts of Cloud Brain: An HTTP API, and a background worker. T
 
 ## HTTP API
 
+### Authentication
+
+The authentication is token-based, and backed by the database. The tokens themselves aren't stores in the database, only a hashed version using scrypt is stored there.
+
+To generate a token, use the `cloudbrain-create-token` tool:
+
+```
+$ cloudbrain-create-token "description of the token"
+time="2016-03-03T03:03:03+00:00" level=info msg="generated token" pid=12345 token=1-b180349faf82840b43ebf27e730f894f
+```
+
+This will generate the token locally, connect to the database (remember to set the `DATABASE_URL` environment variable), and upload the salt and hash (which are also computed locally).
+
+The tokens are on the form `id-token`, where the `id` is a numerical ID that the server uses to look up the salt and hash in the database.
+
+To authenticate with the API, pass the token in the `Authorization` header like this:
+
+``` HTTP
+Authorization: token 1-b180349faf82840b43ebf27e730f894f
+```
+
+If the token is in any way invalid, a 401 will be returned.
+
 ### Create instance
 
 ```

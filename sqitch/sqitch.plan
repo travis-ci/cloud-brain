@@ -4,3 +4,4 @@
 
 appschema 2016-03-01T23:01:20Z Henrik Hodne <henrik@travis-ci.org> # Add schema for all cloudbrain objects.
 instances [appschema] 2016-03-01T23:10:50Z Henrik Hodne <henrik@travis-ci.org> # Creates table to track instances.
+auth_tokens [appschema] 2016-03-03T00:59:36Z Henrik Hodne <henrik@travis-ci.org> # Creates table to track authentication tokens.

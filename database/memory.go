@@ -11,6 +11,7 @@ import (
 type MemoryDatabase struct {
 	instancesMutex sync.Mutex
 	instances      map[string]Instance
+	tokens         []string
 }
 
 func NewMemoryDatabase() *MemoryDatabase {
@@ -68,4 +69,14 @@ func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
 	db.instances[instance.ID] = instance
 
 	return nil
+}
+
+func (db *MemoryDatabase) CheckToken(providedToken string) (bool, error) {
+	for _, token := range db.tokens {
+		if token == providedToken {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

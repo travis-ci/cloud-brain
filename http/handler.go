@@ -6,9 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"github.com/travis-ci/cloud-brain/cloudbrain"
+	"golang.org/x/net/context"
 )
 
 // Handler returns an http.Handler for the API.
@@ -18,8 +17,8 @@ func Handler(ctx context.Context, core *cloudbrain.Core, authTokens []string) ht
 	mux.Handle("/instances", handleInstances(ctx, core))
 
 	return &authWrapper{
-		authTokens: authTokens,
-		handler:    mux,
+		core:    core,
+		handler: mux,
 	}
 }
 
