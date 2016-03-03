@@ -9,9 +9,15 @@ import (
 // MemoryDatabase is a DB implementation that stores everything in memory,
 // useful for testing.
 type MemoryDatabase struct {
-	instancesMutex sync.Mutex
-	instances      map[string]Instance
-	tokens         []string
+	mutex     sync.Mutex
+	instances map[string]Instance
+	tokens    []memoryToken
+}
+
+type memoryToken struct {
+	Hash        []byte
+	Salt        []byte
+	Description string
 }
 
 func NewMemoryDatabase() *MemoryDatabase {
@@ -21,8 +27,8 @@ func NewMemoryDatabase() *MemoryDatabase {
 }
 
 func (db *MemoryDatabase) CreateInstance(instance Instance) (string, error) {
-	db.instancesMutex.Lock()
-	defer db.instancesMutex.Unlock()
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
 
 	id := uuid.New()
 	instance.ID = id
@@ -32,8 +38,8 @@ func (db *MemoryDatabase) CreateInstance(instance Instance) (string, error) {
 }
 
 func (db *MemoryDatabase) GetInstance(id string) (Instance, error) {
-	db.instancesMutex.Lock()
-	defer db.instancesMutex.Unlock()
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
 
 	instance, ok := db.instances[id]
 
@@ -45,8 +51,8 @@ func (db *MemoryDatabase) GetInstance(id string) (Instance, error) {
 }
 
 func (db *MemoryDatabase) GetInstanceByProviderID(providerName, providerID string) (Instance, error) {
-	db.instancesMutex.Lock()
-	defer db.instancesMutex.Unlock()
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
 
 	for _, instance := range db.instances {
 		if instance.ProviderID == providerID && instance.Provider == providerName {
@@ -58,8 +64,8 @@ func (db *MemoryDatabase) GetInstanceByProviderID(providerName, providerID strin
 }
 
 func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
-	db.instancesMutex.Lock()
-	defer db.instancesMutex.Unlock()
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
 
 	_, ok := db.instances[instance.ID]
 	if !ok {
@@ -71,12 +77,23 @@ func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
 	return nil
 }
 
-func (db *MemoryDatabase) CheckToken(providedToken string) (bool, error) {
-	for _, token := range db.tokens {
-		if token == providedToken {
-			return true, nil
-		}
-	}
+func (db *MemoryDatabase) GetSaltAndHashForTokenID(tokenID uint64) ([]byte, []byte, error) {
+	token := db.tokens[tokenID]
 
-	return false, nil
+	return token.Salt, token.Hash, nil
+}
+
+func (db *MemoryDatabase) InsertToken(description string, hash, salt []byte) (uint64, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	id := uint64(len(db.tokens))
+
+	db.tokens = append(db.tokens, memoryToken{
+		Description: description,
+		Hash:        hash,
+		Salt:        salt,
+	})
+
+	return id, nil
 }
