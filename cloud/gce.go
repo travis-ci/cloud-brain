@@ -29,9 +29,10 @@ EOF
 `))
 
 type GCEProvider struct {
-	client    *compute.Service
-	projectID string
-	ic        *gceInstanceConfig
+	client         *compute.Service
+	projectID      string
+	imageProjectID string
+	ic             *gceInstanceConfig
 }
 
 type gceStartContext struct {
@@ -65,6 +66,7 @@ type gceAccountJSON struct {
 type GCEProviderConfiguration struct {
 	AccountJSON         string
 	ProjectID           string
+	ImageProjectID      string
 	Zone                string
 	StandardMachineType string
 	PremiumMachineType  string
@@ -97,8 +99,9 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 	}
 
 	return &GCEProvider{
-		client:    client,
-		projectID: conf.ProjectID,
+		client:         client,
+		projectID:      conf.ProjectID,
+		imageProjectID: conf.ImageProjectID,
 		ic: &gceInstanceConfig{
 			Preemptible:        conf.Preemptible,
 			DiskSize:           conf.DiskSize,
@@ -176,7 +179,7 @@ func (p *GCEProvider) Create(attr CreateAttributes) (Instance, error) {
 }
 
 func (p *GCEProvider) stepGetImage(c *gceStartContext) multistep.StepAction {
-	images, err := p.client.Images.List(p.projectID).Filter(fmt.Sprintf("name eq ^%s", c.createAttrs.ImageName)).Do()
+	images, err := p.client.Images.List(p.imageProjectID).Filter(fmt.Sprintf("name eq ^%s", c.createAttrs.ImageName)).Do()
 	if err != nil {
 		c.errChan <- err
 		return multistep.ActionHalt

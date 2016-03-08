@@ -63,8 +63,13 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "gce-project-id",
-			Usage:  "The GCE project ID",
+			Usage:  "The GCE project ID for the project to boot instances in",
 			EnvVar: "CLOUDBRAIN_GCE_PROJECT_ID",
+		},
+		cli.StringFlag{
+			Name:   "gce-image-project-id",
+			Usage:  "The GCE project ID for the project containing the build environment images",
+			EnvVar: "CLOUDBRAIN_GCE_IMAGE_PROJECT_ID",
 		},
 		cli.StringFlag{
 			Name:   "gce-zone",
@@ -150,6 +155,7 @@ func mainAction(c *cli.Context) {
 	provider, err := cloud.NewGCEProvider(cloud.GCEProviderConfiguration{
 		AccountJSON:         c.String("gce-account-json"),
 		ProjectID:           c.String("gce-project-id"),
+		ImageProjectID:      c.String("gce-image-project-id"),
 		Zone:                c.String("gce-zone"),
 		StandardMachineType: c.String("gce-standard-machine-type"),
 		PremiumMachineType:  c.String("gce-premium-machine-type"),
