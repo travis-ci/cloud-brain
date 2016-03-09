@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -22,7 +22,7 @@ import (
 )
 
 var gceStartupScript = template.Must(template.New("gce-startup").Parse(`#!/usr/bin/env bash
-{{ if .AutoImplode }}echo poweroff | at now + {{ .HardTimeoutMinutes }} minutes{{ end }}
+{{ if .AutoImplode }}echo poweroff | at now + {{ .AutoImplodeMinutes }} minutes{{ end }}
 cat > ~travis/.ssh/authorized_keys <<EOF
 {{ .SSHPubKey }}
 EOF
@@ -75,6 +75,12 @@ type GCEProviderConfiguration struct {
 	AutoImplode         bool
 	AutoImplodeTime     time.Duration
 	Preemptible         bool
+}
+
+type gceStartupScriptInfo struct {
+	AutoImplode        bool
+	AutoImplodeMinutes int64
+	SSHPubKey          string
 }
 
 func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
@@ -205,7 +211,11 @@ func (p *GCEProvider) stepGetImage(c *gceStartContext) multistep.StepAction {
 
 func (p *GCEProvider) stepRenderScript(c *gceStartContext) multistep.StepAction {
 	var scriptBuf bytes.Buffer
-	err := gceStartupScript.Execute(&scriptBuf, p.ic)
+	err := gceStartupScript.Execute(&scriptBuf, gceStartupScriptInfo{
+		AutoImplode:        p.ic.AutoImplode,
+		AutoImplodeMinutes: p.ic.HardTimeoutMinutes,
+		SSHPubKey:          c.createAttrs.PublicSSHKey,
+	})
 	if err != nil {
 		c.errChan <- err
 		return multistep.ActionHalt
