@@ -104,6 +104,26 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 		return nil, err
 	}
 
+	zone, err := client.Zones.Get(conf.ProjectID, conf.Zone).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	machineType, err := client.MachineTypes.Get(conf.ProjectID, zone.Name, conf.StandardMachineType).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	premiumMachineType, err := client.MachineTypes.Get(conf.ProjectID, zone.Name, conf.PremiumMachineType).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	network, err := client.Networks.Get(conf.ProjectID, conf.Network).Do()
+	if err != nil {
+		return nil, err
+	}
+
 	return &GCEProvider{
 		client:         client,
 		projectID:      conf.ProjectID,
@@ -111,8 +131,13 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 		ic: &gceInstanceConfig{
 			Preemptible:        conf.Preemptible,
 			DiskSize:           conf.DiskSize,
+			DiskType:           fmt.Sprintf("zones/%s/diskTypes/pd-ssd", zone.Name),
+			MachineType:        machineType,
+			PremiumMachineType: premiumMachineType,
 			AutoImplode:        conf.AutoImplode,
 			HardTimeoutMinutes: int64(conf.AutoImplodeTime.Minutes()),
+			Zone:               zone,
+			Network:            network,
 		},
 	}, nil
 }
