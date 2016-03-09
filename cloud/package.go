@@ -1,6 +1,12 @@
 // Package cloud provides different implementations for cloud providers.
 package cloud
 
+import "errors"
+
+// ErrInstanceNotFound is returned as an error from Provider.Get() or
+// Provider.Destroy() if an instance with the given ID doesn't exist.
+var ErrInstanceNotFound = errors.New("could not find instance")
+
 // A Provider implements the methods necessary to manage Instances on a given
 // cloud provider.
 type Provider interface {
@@ -41,6 +47,10 @@ const (
 	// InstanceStateTerminating is the state of an instance that has been told
 	// to terminate, but is not yet finished doing that.
 	InstanceStateTerminating InstanceState = "terminating"
+
+	// InstanceStateTerminated is the state of an instance that is done
+	// terminating.
+	InstanceStateTerminated InstanceState = "terminated"
 )
 
 // An InstanceType is the type of instance to start. Valid values are the

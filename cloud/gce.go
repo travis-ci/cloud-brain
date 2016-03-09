@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -170,7 +171,46 @@ func (p *GCEProvider) Name() string {
 }
 
 func (p *GCEProvider) List() ([]Instance, error) {
-	return nil, nil
+	instanceList, err := p.client.Instances.List(p.projectID, p.ic.Zone.Name).Filter("name eq ^testing-gce-.+").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var instances []Instance
+
+	for _, gceInstance := range instanceList.Items {
+		instance := Instance{
+			ID: strings.TrimPrefix(gceInstance.Name, "testing-gce-"),
+		}
+
+		for _, ni := range gceInstance.NetworkInterfaces {
+			if ni.AccessConfigs == nil {
+				continue
+			}
+
+			for _, ac := range ni.AccessConfigs {
+				if ac.NatIP != "" {
+					instance.IPAddress = ac.NatIP
+					break
+				}
+			}
+		}
+
+		switch gceInstance.Status {
+		case "PROVISIONING", "STAGING":
+			instance.State = InstanceStateStarting
+		case "RUNNING":
+			instance.State = InstanceStateRunning
+		case "STOPPING":
+			instance.State = InstanceStateTerminating
+		case "TERMINATED":
+			instance.State = InstanceStateTerminated
+		}
+
+		instances = append(instances, instance)
+	}
+
+	return instances, nil
 }
 
 func (p *GCEProvider) Create(id string, attr CreateAttributes) (Instance, error) {
@@ -338,12 +378,55 @@ func (p *GCEProvider) buildInstance(id string, createAttrs CreateAttributes, ima
 	}
 }
 
-func (p *GCEProvider) Get(providerID string) (Instance, error) {
-	return Instance{}, nil
+func (p *GCEProvider) Get(id string) (Instance, error) {
+	gceInstance, err := p.client.Instances.Get(p.projectID, p.ic.Zone.Name, fmt.Sprintf("testing-gce-%s", id)).Do()
+	if err != nil {
+		if gceErr, ok := err.(*googleapi.Error); ok && gceErr.Code == http.StatusNotFound {
+			return Instance{}, ErrInstanceNotFound
+		}
+		return Instance{}, err
+	}
+
+	instance := Instance{
+		ID: id,
+	}
+
+	for _, ni := range gceInstance.NetworkInterfaces {
+		if ni.AccessConfigs == nil {
+			continue
+		}
+
+		for _, ac := range ni.AccessConfigs {
+			if ac.NatIP != "" {
+				instance.IPAddress = ac.NatIP
+				break
+			}
+		}
+	}
+
+	switch gceInstance.Status {
+	case "PROVISIONING", "STAGING":
+		instance.State = InstanceStateStarting
+	case "RUNNING":
+		instance.State = InstanceStateRunning
+	case "STOPPING":
+		instance.State = InstanceStateTerminating
+	case "TERMINATED":
+		instance.State = InstanceStateTerminated
+	}
+
+	return instance, nil
 }
 
-func (p *GCEProvider) Destroy(providerID string) error {
-	return nil
+func (p *GCEProvider) Destroy(id string) error {
+	_, err := p.client.Instances.Delete(p.projectID, p.ic.Zone.Name, fmt.Sprintf("testing-gce-%s", id)).Do()
+	if err != nil {
+		if gceErr, ok := err.(*googleapi.Error); ok && gceErr.Code == http.StatusNotFound {
+			return ErrInstanceNotFound
+		}
+	}
+
+	return err
 }
 
 type gceStartMultistepWrapper struct {
