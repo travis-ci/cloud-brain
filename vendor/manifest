@@ -34,6 +34,47 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "6acef71eb69611914f7a30939ea9f6e194c78172",
+			"branch": "master",
+			"path": "/context"
+		},
+		{
+			"importpath": "golang.org/x/oauth2",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "2cd4472c321b6cba78e029d99f0e7fe51032fd21",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/oauth2/jwt",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "2cd4472c321b6cba78e029d99f0e7fe51032fd21",
+			"branch": "master",
+			"path": "/jwt"
+		},
+		{
+			"importpath": "google.golang.org/api/compute/v1",
+			"repository": "https://code.googlesource.com/google-api-go-client",
+			"revision": "286e8c9bcb5f84d8dcac21634d79ab16428b1b78",
+			"branch": "master",
+			"path": "/compute/v1"
+		},
+		{
+			"importpath": "google.golang.org/api/gensupport",
+			"repository": "https://code.googlesource.com/google-api-go-client",
+			"revision": "286e8c9bcb5f84d8dcac21634d79ab16428b1b78",
+			"branch": "master",
+			"path": "/gensupport"
+		},
+		{
+			"importpath": "google.golang.org/api/googleapi",
+			"repository": "https://code.googlesource.com/google-api-go-client",
+			"revision": "286e8c9bcb5f84d8dcac21634d79ab16428b1b78",
+			"branch": "master",
+			"path": "/googleapi"
+		},
+		{
 			"importpath": "gopkg.in/airbrake/gobrake.v2",
 			"repository": "https://gopkg.in/airbrake/gobrake.v2",
 			"revision": "c9d51adc624b5cc4c1bf8de730a09af4878ffe2d",

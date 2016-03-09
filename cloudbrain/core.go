@@ -60,19 +60,28 @@ func (c *Core) GetInstance(ctx context.Context, id string) (*Instance, error) {
 	}, nil
 }
 
+// CreateInstanceAttributes contains attributes needed to start an instance
+type CreateInstanceAttributes struct {
+	ImageName    string
+	InstanceType string
+	PublicSSHKey string
+}
+
 // CreateInstance creates an instance in the database and queues off the cloud
 // create job in the background.
-func (c *Core) CreateInstance(ctx context.Context, providerName, imageName string) (*Instance, error) {
+func (c *Core) CreateInstance(ctx context.Context, providerName string, attr CreateInstanceAttributes) (*Instance, error) {
 	id, err := c.db.CreateInstance(database.Instance{
-		Provider: providerName,
-		Image:    imageName,
-		State:    "creating",
+		Provider:     providerName,
+		Image:        attr.ImageName,
+		InstanceType: attr.InstanceType,
+		PublicSSHKey: attr.PublicSSHKey,
+		State:        "creating",
 	})
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 			"err":        err,
 			"provider":   providerName,
-			"image_name": imageName,
+			"image_name": attr.ImageName,
 		}).Error("error creating instance in database")
 		return nil, err
 	}
@@ -95,7 +104,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName, imageName strin
 	return &Instance{
 		ID:           id,
 		ProviderName: providerName,
-		Image:        imageName,
+		Image:        attr.ImageName,
 		State:        "creating",
 	}, nil
 }
@@ -116,7 +125,11 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
-	instance, err := c.cloud.Create(dbInstance.Image)
+	instance, err := c.cloud.Create(id, cloud.CreateAttributes{
+		ImageName:    dbInstance.Image,
+		InstanceType: cloud.InstanceType(dbInstance.InstanceType),
+		PublicSSHKey: dbInstance.PublicSSHKey,
+	})
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 			"err":         err,
@@ -153,12 +166,10 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 	}
 
 	for _, instance := range instances {
-		// TODO(henrikhodne): What to do with ProviderName here? (And in the
-		// rest of the function).
-		dbInstance, err := c.db.GetInstanceByProviderID("fake", instance.ID)
+		dbInstance, err := c.db.GetInstanceByProviderID(c.cloud.Name(), instance.ID)
 		if err != nil {
 			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-				"provider":    "fake",
+				"provider":    c.cloud.Name(),
 				"provider_id": instance.ID,
 			}).Error("failed fetching instance from database")
 			continue
@@ -170,7 +181,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 		err = c.db.UpdateInstance(dbInstance)
 		if err != nil {
 			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-				"provider":    "fake",
+				"provider":    c.cloud.Name(),
 				"provider_id": instance.ID,
 				"db_id":       dbInstance.ID,
 			}).Error("failed to update instance in database")
@@ -178,7 +189,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 	}
 
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-		"provider":       "fake",
+		"provider":       c.cloud.Name(),
 		"instance_count": len(instances),
 	}).Info("refreshed instances")
 

@@ -11,7 +11,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/database"
 	"golang.org/x/crypto/scrypt"
-	"golang.org/x/net/context"
 )
 
 func main() {
@@ -31,7 +30,6 @@ func main() {
 }
 
 func mainAction(c *cli.Context) {
-	ctx := context.Background()
 	if c.String("database-url") == "" {
 		fmt.Printf("error: the DATABASE_URL environment variable must be set\n")
 		return

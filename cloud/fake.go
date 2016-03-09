@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
-	"sync/atomic"
 )
 
 // FakeProvider is an in-memory Provider suitable for tests.
 type FakeProvider struct {
 	instancesMutex sync.Mutex
 	instances      map[string]Instance
-	counter        uint64
 }
 
 // MarkRunning marks a VM as running and gives it a random IP address.
@@ -26,6 +24,10 @@ func (p *FakeProvider) MarkRunning(id string) {
 	inst.IPAddress = fmt.Sprintf("%d.%d.%d.%d", ipAddress[0], ipAddress[1], ipAddress[2], ipAddress[3])
 	inst.State = InstanceStateRunning
 	p.instances[inst.ID] = inst
+}
+
+func (p *FakeProvider) Name() string {
+	return "fake"
 }
 
 // List returns all the instances in the fake provider.
@@ -46,7 +48,7 @@ func (p *FakeProvider) List() ([]Instance, error) {
 }
 
 // Create creates an instance in the fake provider.
-func (p *FakeProvider) Create(image string) (Instance, error) {
+func (p *FakeProvider) Create(id string, attrs CreateAttributes) (Instance, error) {
 	if rand.Intn(5) == 0 {
 		return Instance{}, fmt.Errorf("random error occurred")
 	}
@@ -54,14 +56,13 @@ func (p *FakeProvider) Create(image string) (Instance, error) {
 	p.instancesMutex.Lock()
 	defer p.instancesMutex.Unlock()
 
-	if image == "" {
+	if attrs.ImageName == "" {
 		return Instance{}, fmt.Errorf("image is required")
 	}
 
-	if image == "standard-image" {
-		count := atomic.AddUint64(&p.counter, 1)
+	if attrs.ImageName == "standard-image" {
 		inst := Instance{
-			ID:    fmt.Sprintf("instance-standard-image-%d", count),
+			ID:    id,
 			State: InstanceStateStarting,
 		}
 		if p.instances == nil {

@@ -27,10 +27,12 @@ type DB interface {
 }
 
 type Instance struct {
-	ID         string
-	Provider   string
-	ProviderID string
-	Image      string
-	State      string
-	IPAddress  string
+	ID           string
+	Provider     string
+	ProviderID   string
+	Image        string
+	InstanceType string
+	PublicSSHKey string
+	State        string
+	IPAddress    string
 }

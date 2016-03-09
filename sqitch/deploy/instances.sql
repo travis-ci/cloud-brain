@@ -9,7 +9,8 @@ CREATE TABLE cloudbrain.instances (
 	provider_id TEXT,
 	image       TEXT  NOT NULL,
 	state       TEXT  NOT NULL,
-	ip_address  TEXT
+	ip_address  TEXT,
+	ssh_key     TEXT
 );
 
 COMMIT;
