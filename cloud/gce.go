@@ -18,7 +18,6 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/mitchellh/multistep"
-	"github.com/pborman/uuid"
 )
 
 var gceStartupScript = template.Must(template.New("gce-startup").Parse(`#!/usr/bin/env bash
@@ -36,6 +35,7 @@ type GCEProvider struct {
 }
 
 type gceStartContext struct {
+	id               string
 	instChan         chan Instance
 	errChan          chan error
 	createAttrs      CreateAttributes
@@ -173,10 +173,11 @@ func (p *GCEProvider) List() ([]Instance, error) {
 	return nil, nil
 }
 
-func (p *GCEProvider) Create(attr CreateAttributes) (Instance, error) {
+func (p *GCEProvider) Create(id string, attr CreateAttributes) (Instance, error) {
 	state := &multistep.BasicStateBag{}
 
 	c := &gceStartContext{
+		id:          id,
 		createAttrs: attr,
 		instChan:    make(chan Instance),
 		errChan:     make(chan error),
@@ -251,7 +252,7 @@ func (p *GCEProvider) stepRenderScript(c *gceStartContext) multistep.StepAction 
 }
 
 func (p *GCEProvider) stepInsertInstance(c *gceStartContext) multistep.StepAction {
-	inst := p.buildInstance(c.createAttrs, c.image.SelfLink, c.script)
+	inst := p.buildInstance(c.id, c.createAttrs, c.image.SelfLink, c.script)
 
 	c.bootStart = time.Now().UTC()
 
@@ -265,13 +266,13 @@ func (p *GCEProvider) stepInsertInstance(c *gceStartContext) multistep.StepActio
 	c.instanceInsertOp = op
 
 	c.instChan <- Instance{
-		ID:    inst.Name,
+		ID:    c.id,
 		State: InstanceStateStarting,
 	}
 	return multistep.ActionContinue
 }
 
-func (p *GCEProvider) buildInstance(createAttrs CreateAttributes, imageLink, startupScript string) *compute.Instance {
+func (p *GCEProvider) buildInstance(id string, createAttrs CreateAttributes, imageLink, startupScript string) *compute.Instance {
 	var machineType *compute.MachineType
 	switch createAttrs.InstanceType {
 	case InstanceTypePremium:
@@ -299,7 +300,7 @@ func (p *GCEProvider) buildInstance(createAttrs CreateAttributes, imageLink, sta
 			Preemptible: p.ic.Preemptible,
 		},
 		MachineType: machineType.SelfLink,
-		Name:        fmt.Sprintf("testing-gce-%s", uuid.NewRandom()),
+		Name:        fmt.Sprintf("testing-gce-%s", id),
 		Metadata: &compute.Metadata{
 			Items: []*compute.MetadataItems{
 				&compute.MetadataItems{

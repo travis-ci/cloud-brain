@@ -6,9 +6,9 @@ package cloud
 type Provider interface {
 	Name() string
 	List() ([]Instance, error)
-	Create(attr CreateAttributes) (Instance, error)
-	Get(providerID string) (Instance, error)
-	Destroy(providerID string) error
+	Create(id string, attr CreateAttributes) (Instance, error)
+	Get(id string) (Instance, error)
+	Destroy(id string) error
 }
 
 // An Instance is a single compute instance

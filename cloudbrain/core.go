@@ -125,7 +125,7 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
-	instance, err := c.cloud.Create(cloud.CreateAttributes{
+	instance, err := c.cloud.Create(id, cloud.CreateAttributes{
 		ImageName:    dbInstance.Image,
 		InstanceType: cloud.InstanceType(dbInstance.InstanceType),
 		PublicSSHKey: dbInstance.PublicSSHKey,

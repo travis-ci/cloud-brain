@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
-	"sync/atomic"
 )
 
 // FakeProvider is an in-memory Provider suitable for tests.
 type FakeProvider struct {
 	instancesMutex sync.Mutex
 	instances      map[string]Instance
-	counter        uint64
 }
 
 // MarkRunning marks a VM as running and gives it a random IP address.
@@ -50,7 +48,7 @@ func (p *FakeProvider) List() ([]Instance, error) {
 }
 
 // Create creates an instance in the fake provider.
-func (p *FakeProvider) Create(attrs CreateAttributes) (Instance, error) {
+func (p *FakeProvider) Create(id string, attrs CreateAttributes) (Instance, error) {
 	if rand.Intn(5) == 0 {
 		return Instance{}, fmt.Errorf("random error occurred")
 	}
@@ -63,9 +61,8 @@ func (p *FakeProvider) Create(attrs CreateAttributes) (Instance, error) {
 	}
 
 	if attrs.ImageName == "standard-image" {
-		count := atomic.AddUint64(&p.counter, 1)
 		inst := Instance{
-			ID:    fmt.Sprintf("instance-standard-image-%d", count),
+			ID:    id,
 			State: InstanceStateStarting,
 		}
 		if p.instances == nil {
