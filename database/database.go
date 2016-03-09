@@ -12,9 +12,6 @@ type DB interface {
 	// Retrieves the instance by its ID, or returns an error
 	GetInstance(id string) (Instance, error)
 
-	// Retrieves the instance by its provider name and provider ID
-	GetInstanceByProviderID(provider, providerID string) (Instance, error)
-
 	// Updates the instance with the given ID
 	UpdateInstance(instance Instance) error
 
@@ -28,7 +25,7 @@ type DB interface {
 
 type Instance struct {
 	ID           string
-	Provider     string
+	ProviderType string
 	ProviderID   string
 	Image        string
 	InstanceType string

@@ -50,19 +50,6 @@ func (db *MemoryDatabase) GetInstance(id string) (Instance, error) {
 	return instance, nil
 }
 
-func (db *MemoryDatabase) GetInstanceByProviderID(providerName, providerID string) (Instance, error) {
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-
-	for _, instance := range db.instances {
-		if instance.ProviderID == providerID && instance.Provider == providerName {
-			return instance, nil
-		}
-	}
-
-	return Instance{}, ErrInstanceNotFound
-}
-
 func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()

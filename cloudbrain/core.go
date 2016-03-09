@@ -53,7 +53,7 @@ func (c *Core) GetInstance(ctx context.Context, id string) (*Instance, error) {
 
 	return &Instance{
 		ID:           instance.ID,
-		ProviderName: instance.Provider,
+		ProviderName: instance.ProviderType,
 		Image:        instance.Image,
 		State:        instance.State,
 		IPAddress:    instance.IPAddress,
@@ -71,7 +71,7 @@ type CreateInstanceAttributes struct {
 // create job in the background.
 func (c *Core) CreateInstance(ctx context.Context, providerName string, attr CreateInstanceAttributes) (*Instance, error) {
 	id, err := c.db.CreateInstance(database.Instance{
-		Provider:     providerName,
+		ProviderType: providerName,
 		Image:        attr.ImageName,
 		InstanceType: attr.InstanceType,
 		PublicSSHKey: attr.PublicSSHKey,
@@ -166,7 +166,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 	}
 
 	for _, instance := range instances {
-		dbInstance, err := c.db.GetInstanceByProviderID(c.cloud.Name(), instance.ID)
+		dbInstance, err := c.db.GetInstance(instance.ID)
 		if err != nil {
 			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 				"provider":    c.cloud.Name(),
