@@ -21,6 +21,9 @@ type DB interface {
 
 	// Insert a token into the database, returns the ID of the token
 	InsertToken(description string, hash, salt []byte) (uint64, error)
+
+	// List all the providers in the database
+	ListProviders() ([]Provider, error)
 }
 
 type Instance struct {
@@ -32,4 +35,10 @@ type Instance struct {
 	PublicSSHKey string
 	State        string
 	IPAddress    string
+}
+
+type Provider struct {
+	ID     string
+	Type   string
+	Config []byte
 }

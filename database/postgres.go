@@ -113,3 +113,28 @@ func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64
 
 	return id, err
 }
+
+func (db *PostgresDB) ListProviders() ([]Provider, error) {
+	rows, err := db.db.Query("SELECT id, type, config FROM cloudbrain.providers")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var providers []Provider
+	for rows.Next() {
+		var provider Provider
+		err := rows.Scan(&provider.ID, &provider.Type, &provider.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		providers = append(providers, provider)
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return providers, nil
+}

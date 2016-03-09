@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/pborman/uuid"
@@ -83,4 +84,8 @@ func (db *MemoryDatabase) InsertToken(description string, hash, salt []byte) (ui
 	})
 
 	return id, nil
+}
+
+func (db *MemoryDatabase) ListProviders() ([]Provider, error) {
+	return nil, fmt.Errorf("provider listing not implemented for MemoryDatabase")
 }

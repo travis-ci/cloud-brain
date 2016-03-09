@@ -28,6 +28,10 @@ cat > ~travis/.ssh/authorized_keys <<EOF
 EOF
 `))
 
+func init() {
+	Register("gce", "Google Compute Engine", NewGCEProviderFromJSON)
+}
+
 type GCEProvider struct {
 	client         *compute.Service
 	projectID      string
@@ -62,20 +66,21 @@ type gceInstanceConfig struct {
 type gceAccountJSON struct {
 	ClientEmail string `json:"client_email"`
 	PrivateKey  string `json:"private_key"`
+	TokenURI    string `json:"token_uri"`
 }
 
 type GCEProviderConfiguration struct {
-	AccountJSON         string
-	ProjectID           string
-	ImageProjectID      string
-	Zone                string
-	StandardMachineType string
-	PremiumMachineType  string
-	Network             string
-	DiskSize            int64
-	AutoImplode         bool
-	AutoImplodeTime     time.Duration
-	Preemptible         bool
+	AccountJSON         gceAccountJSON `json:"account_json"`
+	ProjectID           string         `json:"project_id"`
+	ImageProjectID      string         `json:"image_project_id"`
+	Zone                string         `json:"zone"`
+	StandardMachineType string         `json:"standard_machine_type"`
+	PremiumMachineType  string         `json:"premium_machine_type"`
+	Network             string         `json:"network"`
+	DiskSize            int64          `json:"disk_size"`
+	AutoImplode         bool           `json:"auto_implode"`
+	AutoImplodeTime     time.Duration  `json:"auto_implode_time"`
+	Preemptible         bool           `json:"preemptible"`
 }
 
 type gceStartupScriptInfo struct {
@@ -84,20 +89,25 @@ type gceStartupScriptInfo struct {
 	SSHPubKey          string
 }
 
-func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
-	a, err := loadGoogleAccountJSON(conf.AccountJSON)
+func NewGCEProviderFromJSON(jsonConfig []byte) (Provider, error) {
+	var config GCEProviderConfiguration
+	err := json.Unmarshal(jsonConfig, &config)
 	if err != nil {
 		return nil, err
 	}
 
+	return NewGCEProvider(config)
+}
+
+func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 	clientConfig := &jwt.Config{
-		Email:      a.ClientEmail,
-		PrivateKey: []byte(a.PrivateKey),
+		Email:      conf.AccountJSON.ClientEmail,
+		PrivateKey: []byte(conf.AccountJSON.PrivateKey),
 		Scopes: []string{
 			compute.DevstorageFullControlScope,
 			compute.ComputeScope,
 		},
-		TokenURL: "https://accounts.google.com/o/oauth2/token",
+		TokenURL: conf.AccountJSON.TokenURI,
 	}
 
 	client, err := compute.New(clientConfig.Client(oauth2.NoContext))
