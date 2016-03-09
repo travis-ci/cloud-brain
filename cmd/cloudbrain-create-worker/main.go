@@ -98,7 +98,7 @@ func main() {
 		cli.IntFlag{
 			Name:   "gce-disk-size",
 			Usage:  "The GCE disk size in GiB",
-			Value:  20,
+			Value:  30,
 			EnvVar: "CLOUDBRAIN_GCE_DISK_SIZE",
 		},
 		cli.BoolFlag{
