@@ -1,3 +1,3 @@
-web: bin/cloudbrain-http
-createworker: bin/cloudbrain-create-worker
-refreshworker: bin/cloudbrain-refresh-worker
+web: bin/start-stunnel bin/cloudbrain-http
+createworker: bin/start-stunnel bin/cloudbrain-create-worker
+refreshworker: bin/start-stunnel bin/cloudbrain-refresh-worker
