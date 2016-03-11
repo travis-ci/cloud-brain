@@ -152,6 +152,26 @@ func (db *PostgresDB) ListProviders() ([]Provider, error) {
 	return providers, nil
 }
 
+func (db *PostgresDB) CreateProvider(provider Provider) (string, error) {
+	if provider.ID == "" {
+		provider.ID = uuid.New()
+	}
+
+	encryptedConfig := db.encrypt(provider.Config)
+
+	_, err := db.db.Exec(
+		"INSERT INTO cloudbrain.providers (id, type, config) VALUES ($1, $2, $3)",
+		provider.ID,
+		provider.Type,
+		encryptedConfig,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return provider.ID, nil
+}
+
 func (db *PostgresDB) decrypt(ciphertext []byte) ([]byte, bool) {
 	if len(ciphertext) < 24 {
 		return nil, false

@@ -24,6 +24,10 @@ type DB interface {
 
 	// List all the providers in the database
 	ListProviders() ([]Provider, error)
+
+	// Inserts the provider into the database, returns the id or an error. The
+	// id will be automatically generated if one is not supplied.
+	CreateProvider(provider Provider) (string, error)
 }
 
 type Instance struct {

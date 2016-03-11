@@ -89,3 +89,7 @@ func (db *MemoryDatabase) InsertToken(description string, hash, salt []byte) (ui
 func (db *MemoryDatabase) ListProviders() ([]Provider, error) {
 	return nil, fmt.Errorf("provider listing not implemented for MemoryDatabase")
 }
+
+func (db *MemoryDatabase) CreateProvider(provider Provider) (string, error) {
+	return "", fmt.Errorf("provider creation not implemented for MemoryDatabase")
+}
