@@ -3,6 +3,8 @@ package cloudbrain
 import (
 	"crypto/subtle"
 	"encoding/hex"
+	"fmt"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/travis-ci/cloud-brain/cbcontext"
@@ -16,9 +18,11 @@ import (
 const MaxCreateRetries = 10
 
 type Core struct {
-	cloudProviders map[string]cloud.Provider
-	db             database.DB
-	wb             worker.Backend
+	db database.DB
+	wb worker.Backend
+
+	cloudProvidersMutex sync.Mutex
+	cloudProviders      map[string]cloud.Provider
 }
 
 // TODO(henrikhodne): Is this necessary? Why not just make a Core directly?
@@ -28,26 +32,9 @@ type CoreConfig struct {
 }
 
 func NewCore(conf *CoreConfig) (*Core, error) {
-	dbCloudProviders, err := conf.DB.ListProviders()
-	if err != nil {
-		return nil, err
-	}
-
-	cloudProviders := make(map[string]cloud.Provider)
-
-	for _, dbCloudProvider := range dbCloudProviders {
-		cloudProvider, err := cloud.NewProvider(dbCloudProvider.Type, dbCloudProvider.Config)
-		if err != nil {
-			return nil, err
-		}
-
-		cloudProviders[dbCloudProvider.Name] = cloudProvider
-	}
-
 	return &Core{
-		cloudProviders: cloudProviders,
-		db:             conf.DB,
-		wb:             conf.WorkerBackend,
+		db: conf.DB,
+		wb: conf.WorkerBackend,
 	}, nil
 }
 
@@ -138,11 +125,12 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
-	cloudProvider, ok := c.cloudProviders[dbInstance.ProviderName]
-	if !ok {
+	cloudProvider, err := c.cloudProvider(dbInstance.ProviderName)
+	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 			"instance_id":   id,
 			"provider_name": dbInstance.ProviderName,
+			"err":           err,
 		}).Error("couldn't find provider with given name")
 		return err
 	}
@@ -181,6 +169,10 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 }
 
 func (c *Core) ProviderRefresh(ctx context.Context) error {
+	c.refreshProviders()
+	c.cloudProvidersMutex.Lock()
+	defer c.cloudProvidersMutex.Unlock()
+
 	for providerName, cloudProvider := range c.cloudProviders {
 		// TODO(henrikhodne): An error on one provider shouldn't affect other providers
 		instances, err := cloudProvider.List()
@@ -237,6 +229,53 @@ func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
 	}
 
 	return subtle.ConstantTimeCompare(generatedHash, hash) == 1, nil
+}
+
+func (c *Core) cloudProvider(name string) (cloud.Provider, error) {
+	c.cloudProvidersMutex.Lock()
+	cloudProvider, ok := c.cloudProviders[name]
+	c.cloudProvidersMutex.Unlock()
+	if !ok {
+		err := c.refreshProviders()
+		if err != nil {
+			return nil, err
+		}
+
+		c.cloudProvidersMutex.Lock()
+		cloudProvider, ok = c.cloudProviders[name]
+		c.cloudProvidersMutex.Unlock()
+		if !ok {
+			// This really shouldn't happen, since the database should ensure
+			// that a provider with a matching name exists.
+			return nil, fmt.Errorf("couldn't find a provider with that name")
+		}
+	}
+
+	return cloudProvider, nil
+}
+
+func (c *Core) refreshProviders() error {
+	c.cloudProvidersMutex.Lock()
+	defer c.cloudProvidersMutex.Unlock()
+	dbCloudProviders, err := c.db.ListProviders()
+	if err != nil {
+		return err
+	}
+
+	cloudProviders := make(map[string]cloud.Provider)
+
+	for _, dbCloudProvider := range dbCloudProviders {
+		cloudProvider, err := cloud.NewProvider(dbCloudProvider.Type, dbCloudProvider.Config)
+		if err != nil {
+			return err
+		}
+
+		cloudProviders[dbCloudProvider.Name] = cloudProvider
+	}
+
+	c.cloudProviders = cloudProviders
+
+	return nil
 }
 
 type Instance struct {
