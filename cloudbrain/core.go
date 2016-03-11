@@ -60,7 +60,7 @@ func (c *Core) GetInstance(ctx context.Context, id string) (*Instance, error) {
 
 	return &Instance{
 		ID:           instance.ID,
-		ProviderName: instance.ProviderType,
+		ProviderName: instance.ProviderName,
 		Image:        instance.Image,
 		State:        instance.State,
 		IPAddress:    instance.IPAddress,
@@ -78,7 +78,7 @@ type CreateInstanceAttributes struct {
 // create job in the background.
 func (c *Core) CreateInstance(ctx context.Context, providerName string, attr CreateInstanceAttributes) (*Instance, error) {
 	id, err := c.db.CreateInstance(database.Instance{
-		ProviderType: providerName,
+		ProviderName: providerName,
 		Image:        attr.ImageName,
 		InstanceType: attr.InstanceType,
 		PublicSSHKey: attr.PublicSSHKey,
@@ -145,7 +145,6 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
-	dbInstance.ProviderID = instance.ID
 	dbInstance.State = "starting"
 
 	err = c.db.UpdateInstance(dbInstance)

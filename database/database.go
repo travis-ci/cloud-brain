@@ -32,8 +32,7 @@ type DB interface {
 
 type Instance struct {
 	ID           string
-	ProviderType string
-	ProviderID   string
+	ProviderName string
 	Image        string
 	InstanceType string
 	PublicSSHKey string

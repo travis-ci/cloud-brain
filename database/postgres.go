@@ -26,10 +26,9 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 	instance.ID = uuid.New()
 
 	_, err := db.db.Exec(
-		"INSERT INTO cloudbrain.instances (id, provider_type, provider_id, image, state, ip_address, ssh_key) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		"INSERT INTO cloudbrain.instances (id, provider_name, image, state, ip_address, ssh_key) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 		instance.ID,
-		instance.ProviderType,
-		instance.ProviderID,
+		instance.ProviderName,
 		instance.Image,
 		instance.State,
 		sql.NullString{
@@ -52,11 +51,10 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 	instance := Instance{ID: id}
 	var ipAddress, sshKey sql.NullString
 	err := db.db.QueryRow(
-		"SELECT provider_type, provider_id, image, state, ip_address, ssh_key FROM cloudbrain.instances WHERE id = $1",
+		"SELECT provider_name, image, state, ip_address, ssh_key FROM cloudbrain.instances WHERE id = $1",
 		id,
 	).Scan(
-		&instance.ProviderType,
-		&instance.ProviderID,
+		&instance.ProviderName,
 		&instance.Image,
 		&instance.State,
 		&ipAddress,
@@ -77,9 +75,8 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 
 func (db *PostgresDB) UpdateInstance(instance Instance) error {
 	_, err := db.db.Exec(
-		"UPDATE cloudbrain.instances SET provider_type = $1, provider_id = $2, image = $3, state = $4, ip_address = $5, ssh_key = $6 WHERE id = $7",
-		instance.ProviderType,
-		instance.ProviderID,
+		"UPDATE cloudbrain.instances SET provider_name = $1, image = $2, state = $3, ip_address = $4, ssh_key = $5 WHERE id = $6",
+		instance.ProviderName,
 		instance.Image,
 		instance.State,
 		sql.NullString{
