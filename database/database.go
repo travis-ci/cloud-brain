@@ -44,5 +44,6 @@ type Instance struct {
 type Provider struct {
 	ID     string
 	Type   string
+	Name   string
 	Config []byte
 }

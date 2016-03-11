@@ -2,7 +2,7 @@
 
 BEGIN;
 
-SELECT id, type, config
+SELECT id, type, name, config
 FROM cloudbrain.providers
 WHERE false;
 

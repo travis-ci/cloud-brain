@@ -121,7 +121,7 @@ func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64
 }
 
 func (db *PostgresDB) ListProviders() ([]Provider, error) {
-	rows, err := db.db.Query("SELECT id, type, config FROM cloudbrain.providers")
+	rows, err := db.db.Query("SELECT id, type, name, config FROM cloudbrain.providers")
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (db *PostgresDB) ListProviders() ([]Provider, error) {
 	for rows.Next() {
 		var provider Provider
 		var encryptedConfig []byte
-		err := rows.Scan(&provider.ID, &provider.Type, &encryptedConfig)
+		err := rows.Scan(&provider.ID, &provider.Type, &provider.Name, &encryptedConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -160,9 +160,10 @@ func (db *PostgresDB) CreateProvider(provider Provider) (string, error) {
 	encryptedConfig := db.encrypt(provider.Config)
 
 	_, err := db.db.Exec(
-		"INSERT INTO cloudbrain.providers (id, type, config) VALUES ($1, $2, $3)",
+		"INSERT INTO cloudbrain.providers (id, type, name, config) VALUES ($1, $2, $3, $4)",
 		provider.ID,
 		provider.Type,
+		provider.Name,
 		encryptedConfig,
 	)
 	if err != nil {

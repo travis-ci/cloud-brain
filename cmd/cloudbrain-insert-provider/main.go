@@ -30,6 +30,11 @@ func main() {
 			EnvVar: "CLOUDBRAIN_DATABASE_ENCRYPTION_KEY",
 		},
 		cli.StringFlag{
+			Name:   "provider-name",
+			Usage:  "The name to assign to the provider being added",
+			EnvVar: "CLOUDBRAIN_PROVIDER_NAME",
+		},
+		cli.StringFlag{
 			Name:   "gce-account-json",
 			Usage:  "A path pointing to the GCE account JSON file",
 			EnvVar: "CLOUDBRAIN_GCE_ACCOUNT_JSON",
@@ -141,8 +146,15 @@ func mainAction(c *cli.Context) {
 		return
 	}
 
+	providerName := c.String("provider-name")
+	if providerName == "" {
+		fmt.Printf("error: provider name can't be blank\n")
+		return
+	}
+
 	id, err := db.CreateProvider(database.Provider{
 		Type:   "gce",
+		Name:   providerName,
 		Config: jsonConfig,
 	})
 
@@ -151,7 +163,7 @@ func mainAction(c *cli.Context) {
 		return
 	}
 
-	fmt.Printf("created provider with ID %s\n", id)
+	fmt.Printf("created provider %s with ID %s\n", providerName, id)
 }
 
 func loadGoogleAccountJSON(filename string) (cloud.GCEAccountJSON, error) {
