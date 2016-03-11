@@ -26,7 +26,7 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 	instance.ID = uuid.New()
 
 	_, err := db.db.Exec(
-		"INSERT INTO cloudbrain.instances (id, provider_name, image, state, ip_address, ssh_key) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		"INSERT INTO cloudbrain.instances (id, provider_name, image, state, ip_address, ssh_key) VALUES ($1, $2, $3, $4, $5, $6)",
 		instance.ID,
 		instance.ProviderName,
 		instance.Image,
