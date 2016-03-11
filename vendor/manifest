@@ -34,6 +34,59 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/lib/pq",
+			"repository": "https://github.com/lib/pq",
+			"revision": "165a3529e799da61ab10faed1fabff3662d6193f",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/mitchellh/multistep",
+			"repository": "https://github.com/mitchellh/multistep",
+			"revision": "162146fc57112954184d90266f4733e900ed05a5",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pborman/uuid",
+			"repository": "https://github.com/pborman/uuid",
+			"revision": "c55201b036063326c5b1b89ccfe45a184973d073",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/crypto/nacl/secretbox",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"branch": "master",
+			"path": "/nacl/secretbox"
+		},
+		{
+			"importpath": "golang.org/x/crypto/pbkdf2",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"branch": "master",
+			"path": "/pbkdf2"
+		},
+		{
+			"importpath": "golang.org/x/crypto/poly1305",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"branch": "master",
+			"path": "/poly1305"
+		},
+		{
+			"importpath": "golang.org/x/crypto/salsa20/salsa",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"branch": "master",
+			"path": "/salsa20/salsa"
+		},
+		{
+			"importpath": "golang.org/x/crypto/scrypt",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"branch": "master",
+			"path": "/scrypt"
+		},
+		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
 			"revision": "6acef71eb69611914f7a30939ea9f6e194c78172",

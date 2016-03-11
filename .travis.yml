@@ -1,0 +1,21 @@
+language: go
+go: 1.6
+
+services:
+- redis
+
+env:
+  global:
+    - REDIS_URL="redis://"
+
+addons:
+  postgresql: "9.4"
+
+install:
+- go get github.com/FiloSottile/gvt
+- go get -u github.com/alecthomas/gometalinter
+- gometalinter --install --update
+
+script:
+  - make deps
+  - make test

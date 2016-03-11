@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"os"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/cbcontext"
-	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	"github.com/travis-ci/cloud-brain/worker"
@@ -57,64 +57,9 @@ func main() {
 			EnvVar: "CLOUDBRAIN_DATABASE_URL,DATABASE_URL",
 		},
 		cli.StringFlag{
-			Name:   "gce-account-json",
-			Usage:  "The GCE account JSON blob, or a path pointing to the JSON blob",
-			EnvVar: "CLOUDBRAIN_GCE_ACCOUNT_JSON",
-		},
-		cli.StringFlag{
-			Name:   "gce-project-id",
-			Usage:  "The GCE project ID for the project to boot instances in",
-			EnvVar: "CLOUDBRAIN_GCE_PROJECT_ID",
-		},
-		cli.StringFlag{
-			Name:   "gce-image-project-id",
-			Usage:  "The GCE project ID for the project containing the build environment images",
-			EnvVar: "CLOUDBRAIN_GCE_IMAGE_PROJECT_ID",
-		},
-		cli.StringFlag{
-			Name:   "gce-zone",
-			Usage:  "The GCE zone to boot instances in",
-			Value:  "us-central1-a",
-			EnvVar: "CLOUDBRAIN_GCE_ZONE",
-		},
-		cli.StringFlag{
-			Name:   "gce-standard-machine-type",
-			Usage:  "The machine type to use for 'standard' instances",
-			Value:  "n1-standard-2",
-			EnvVar: "CLOUDBRAIN_GCE_STANDARD_MACHINE_TYPE",
-		},
-		cli.StringFlag{
-			Name:   "gce-premium-machine-type",
-			Usage:  "The machine type to use for 'premium' instances",
-			Value:  "n1-standard-4",
-			EnvVar: "CLOUDBRAIN_GCE_PREMIUM_MACHINE_TYPE",
-		},
-		cli.StringFlag{
-			Name:   "gce-network",
-			Usage:  "The GCE network to connect instances to",
-			Value:  "default",
-			EnvVar: "CLOUDBRAIN_GCE_NETWORK",
-		},
-		cli.IntFlag{
-			Name:   "gce-disk-size",
-			Usage:  "The GCE disk size in GiB",
-			Value:  30,
-			EnvVar: "CLOUDBRAIN_GCE_DISK_SIZE",
-		},
-		cli.BoolFlag{
-			Name:   "gce-auto-implode",
-			Usage:  "Enable to make the instance power off after gce-auto-implode-time if it's still running",
-			EnvVar: "CLOUDBRAIN_GCE_AUTO_IMPLODE",
-		},
-		cli.DurationFlag{
-			Name:   "gce-auto-implode-time",
-			Usage:  "How long to wait before auto-imploding. Will be rounded down to the nearest minute.",
-			EnvVar: "CLOUDBRAIN_GCE_AUTO_IMPLODE_TIME",
-		},
-		cli.BoolFlag{
-			Name:   "gce-preemptible",
-			Usage:  "Enable to use GCE preemptible instances",
-			EnvVar: "CLOUDBRAIN_GCE_PREEMPTIBLE",
+			Name:   "database-encryption-key",
+			Usage:  "The database encryption key, hex-encoded",
+			EnvVar: "CLOUDBRAIN_DATABASE_ENCRYPTION_KEY",
 		},
 	}
 
@@ -150,30 +95,23 @@ func mainAction(c *cli.Context) {
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't connect to postgres")
 	}
-	db := database.NewPostgresDB(pgdb)
 
-	provider, err := cloud.NewGCEProvider(cloud.GCEProviderConfiguration{
-		AccountJSON:         c.String("gce-account-json"),
-		ProjectID:           c.String("gce-project-id"),
-		ImageProjectID:      c.String("gce-image-project-id"),
-		Zone:                c.String("gce-zone"),
-		StandardMachineType: c.String("gce-standard-machine-type"),
-		PremiumMachineType:  c.String("gce-premium-machine-type"),
-		Network:             c.String("gce-network"),
-		DiskSize:            int64(c.Int("gce-disk-size")),
-		AutoImplode:         c.Bool("gce-auto-implode"),
-		AutoImplodeTime:     c.Duration("gce-auto-implode-time"),
-		Preemptible:         c.Bool("gce-preemptible"),
-	})
+	var encryptionKey [32]byte
+	keySlice, err := hex.DecodeString(c.String("database-encryption-key"))
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't create GCE provider")
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't decode database encryption key")
 	}
+	copy(encryptionKey[:], keySlice[0:32])
 
-	core := cloudbrain.NewCore(&cloudbrain.CoreConfig{
-		CloudProvider: provider,
+	db := database.NewPostgresDB(encryptionKey, pgdb)
+
+	core, err := cloudbrain.NewCore(&cloudbrain.CoreConfig{
 		DB:            db,
 		WorkerBackend: workerBackend,
 	})
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't configure core")
+	}
 
 	err = worker.Run(ctx, "create", workerBackend, worker.WorkerFunc(core.ProviderCreateInstance))
 	if err != nil {

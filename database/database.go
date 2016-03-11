@@ -12,9 +12,6 @@ type DB interface {
 	// Retrieves the instance by its ID, or returns an error
 	GetInstance(id string) (Instance, error)
 
-	// Retrieves the instance by its provider name and provider ID
-	GetInstanceByProviderID(provider, providerID string) (Instance, error)
-
 	// Updates the instance with the given ID
 	UpdateInstance(instance Instance) error
 
@@ -24,15 +21,28 @@ type DB interface {
 
 	// Insert a token into the database, returns the ID of the token
 	InsertToken(description string, hash, salt []byte) (uint64, error)
+
+	// List all the providers in the database
+	ListProviders() ([]Provider, error)
+
+	// Inserts the provider into the database, returns the id or an error. The
+	// id will be automatically generated if one is not supplied.
+	CreateProvider(provider Provider) (string, error)
 }
 
 type Instance struct {
 	ID           string
-	Provider     string
-	ProviderID   string
+	ProviderName string
 	Image        string
 	InstanceType string
 	PublicSSHKey string
 	State        string
 	IPAddress    string
+}
+
+type Provider struct {
+	ID     string
+	Type   string
+	Name   string
+	Config []byte
 }

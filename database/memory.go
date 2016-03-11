@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/pborman/uuid"
@@ -50,19 +51,6 @@ func (db *MemoryDatabase) GetInstance(id string) (Instance, error) {
 	return instance, nil
 }
 
-func (db *MemoryDatabase) GetInstanceByProviderID(providerName, providerID string) (Instance, error) {
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-
-	for _, instance := range db.instances {
-		if instance.ProviderID == providerID && instance.Provider == providerName {
-			return instance, nil
-		}
-	}
-
-	return Instance{}, ErrInstanceNotFound
-}
-
 func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
@@ -96,4 +84,12 @@ func (db *MemoryDatabase) InsertToken(description string, hash, salt []byte) (ui
 	})
 
 	return id, nil
+}
+
+func (db *MemoryDatabase) ListProviders() ([]Provider, error) {
+	return nil, fmt.Errorf("provider listing not implemented for MemoryDatabase")
+}
+
+func (db *MemoryDatabase) CreateProvider(provider Provider) (string, error) {
+	return "", fmt.Errorf("provider creation not implemented for MemoryDatabase")
 }
