@@ -13,7 +13,6 @@ import (
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/cbcontext"
-	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	"github.com/travis-ci/cloud-brain/worker"
@@ -112,21 +111,13 @@ func mainAction(c *cli.Context) {
 
 	db := database.NewPostgresDB(encryptionKey, pgdb)
 
-	providers, err := db.ListProviders()
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't get provider information from database")
-	}
-
-	provider, err := cloud.NewProvider(providers[0].Type, providers[0].Config)
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't create provider")
-	}
-
-	core := cloudbrain.NewCore(&cloudbrain.CoreConfig{
-		CloudProvider: provider,
+	core, err := cloudbrain.NewCore(&cloudbrain.CoreConfig{
 		DB:            db,
 		WorkerBackend: workerBackend,
 	})
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't configure core")
+	}
 
 	var errorCount uint
 	for {

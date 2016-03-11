@@ -23,19 +23,26 @@ type Core struct {
 
 // TODO(henrikhodne): Is this necessary? Why not just make a Core directly?
 type CoreConfig struct {
-	CloudProvider cloud.Provider
 	DB            database.DB
 	WorkerBackend worker.Backend
 }
 
-func NewCore(conf *CoreConfig) *Core {
-	c := &Core{
-		cloud: conf.CloudProvider,
-		db:    conf.DB,
-		wb:    conf.WorkerBackend,
+func NewCore(conf *CoreConfig) (*Core, error) {
+	cloudProviders, err := conf.DB.ListProviders()
+	if err != nil {
+		return nil, err
 	}
 
-	return c
+	cloudProvider, err := cloud.NewProvider(cloudProviders[0].Type, cloudProviders[0].Config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Core{
+		cloud: cloudProvider,
+		db:    conf.DB,
+		wb:    conf.WorkerBackend,
+	}, nil
 }
 
 // GetInstance gets the instance information stored in the database for a given
