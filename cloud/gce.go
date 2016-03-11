@@ -63,14 +63,14 @@ type gceInstanceConfig struct {
 	Preemptible        bool
 }
 
-type gceAccountJSON struct {
+type GCEAccountJSON struct {
 	ClientEmail string `json:"client_email"`
 	PrivateKey  string `json:"private_key"`
 	TokenURI    string `json:"token_uri"`
 }
 
 type GCEProviderConfiguration struct {
-	AccountJSON         gceAccountJSON `json:"account_json"`
+	AccountJSON         GCEAccountJSON `json:"account_json"`
 	ProjectID           string         `json:"project_id"`
 	ImageProjectID      string         `json:"image_project_id"`
 	Zone                string         `json:"zone"`
@@ -153,7 +153,7 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 	}, nil
 }
 
-func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {
+func loadGoogleAccountJSON(filenameOrJSON string) (*GCEAccountJSON, error) {
 	var (
 		reader io.Reader
 		err    error
@@ -171,7 +171,7 @@ func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {
 		reader = file
 	}
 
-	a := &gceAccountJSON{}
+	a := &GCEAccountJSON{}
 	err = json.NewDecoder(reader).Decode(a)
 	return a, err
 }

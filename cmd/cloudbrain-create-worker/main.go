@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"os"
 	"time"
 
@@ -56,6 +57,11 @@ func main() {
 			Usage:  "The URL for the PostgreSQL database to use",
 			EnvVar: "CLOUDBRAIN_DATABASE_URL,DATABASE_URL",
 		},
+		cli.StringFlag{
+			Name:   "database-encryption-key",
+			Usage:  "The database encryption key, hex-encoded",
+			EnvVar: "CLOUDBRAIN_DATABASE_ENCRYPTION_KEY",
+		},
 	}
 
 	app.Run(os.Args)
@@ -90,7 +96,15 @@ func mainAction(c *cli.Context) {
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't connect to postgres")
 	}
-	db := database.NewPostgresDB(pgdb)
+
+	var encryptionKey [32]byte
+	keySlice, err := hex.DecodeString(c.String("database-encryption-key"))
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't decode database encryption key")
+	}
+	copy(encryptionKey[:], keySlice[0:32])
+
+	db := database.NewPostgresDB(encryptionKey, pgdb)
 
 	providers, err := db.ListProviders()
 	if err != nil {

@@ -1,18 +1,24 @@
 package database
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"fmt"
+
+	"golang.org/x/crypto/nacl/secretbox"
 
 	"github.com/pborman/uuid"
 )
 
 type PostgresDB struct {
-	db *sql.DB
+	encryptionKey [32]byte
+	db            *sql.DB
 }
 
-func NewPostgresDB(db *sql.DB) *PostgresDB {
+func NewPostgresDB(encryptionKey [32]byte, db *sql.DB) *PostgresDB {
 	return &PostgresDB{
-		db: db,
+		encryptionKey: encryptionKey,
+		db:            db,
 	}
 }
 
@@ -124,9 +130,16 @@ func (db *PostgresDB) ListProviders() ([]Provider, error) {
 	var providers []Provider
 	for rows.Next() {
 		var provider Provider
-		err := rows.Scan(&provider.ID, &provider.Type, &provider.Config)
+		var encryptedConfig []byte
+		err := rows.Scan(&provider.ID, &provider.Type, &encryptedConfig)
 		if err != nil {
 			return nil, err
+		}
+
+		var ok bool
+		provider.Config, ok = db.decrypt(encryptedConfig)
+		if !ok {
+			return nil, fmt.Errorf("unable to decrypt config for provider %s", provider.ID)
 		}
 
 		providers = append(providers, provider)
@@ -137,4 +150,28 @@ func (db *PostgresDB) ListProviders() ([]Provider, error) {
 	}
 
 	return providers, nil
+}
+
+func (db *PostgresDB) decrypt(ciphertext []byte) ([]byte, bool) {
+	if len(ciphertext) < 24 {
+		return nil, false
+	}
+
+	var nonce [24]byte
+	copy(nonce[:], ciphertext[0:24])
+	box := ciphertext[24:]
+
+	return secretbox.Open(nil, box, &nonce, &db.encryptionKey)
+}
+
+func (db *PostgresDB) encrypt(plaintext []byte) []byte {
+	var nonce [24]byte
+	_, err := rand.Read(nonce[:])
+	if err != nil {
+		return nil
+	}
+
+	out := secretbox.Seal(nil, plaintext, &nonce, &db.encryptionKey)
+
+	return append(nonce[:], out...)
 }

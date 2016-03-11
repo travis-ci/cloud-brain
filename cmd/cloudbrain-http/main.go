@@ -108,7 +108,7 @@ func mainAction(c *cli.Context) {
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't connect to postgres")
 	}
-	db := database.NewPostgresDB(pgdb)
+	db := database.NewPostgresDB([32]byte{}, pgdb)
 
 	core := cloudbrain.NewCore(&cloudbrain.CoreConfig{
 		DB:            db,

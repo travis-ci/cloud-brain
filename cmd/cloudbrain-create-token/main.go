@@ -39,7 +39,7 @@ func mainAction(c *cli.Context) {
 		fmt.Printf("error: could not connect to the database: %v\n", err)
 		return
 	}
-	db := database.NewPostgresDB(pgdb)
+	db := database.NewPostgresDB([32]byte{}, pgdb)
 
 	salt := make([]byte, 32)
 	token := make([]byte, 16)
