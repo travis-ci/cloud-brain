@@ -16,9 +16,9 @@ import (
 const MaxCreateRetries = 10
 
 type Core struct {
-	cloud cloud.Provider
-	db    database.DB
-	wb    worker.Backend
+	cloudProviders map[string]cloud.Provider
+	db             database.DB
+	wb             worker.Backend
 }
 
 // TODO(henrikhodne): Is this necessary? Why not just make a Core directly?
@@ -28,20 +28,26 @@ type CoreConfig struct {
 }
 
 func NewCore(conf *CoreConfig) (*Core, error) {
-	cloudProviders, err := conf.DB.ListProviders()
+	dbCloudProviders, err := conf.DB.ListProviders()
 	if err != nil {
 		return nil, err
 	}
 
-	cloudProvider, err := cloud.NewProvider(cloudProviders[0].Type, cloudProviders[0].Config)
-	if err != nil {
-		return nil, err
+	cloudProviders := make(map[string]cloud.Provider)
+
+	for _, dbCloudProvider := range dbCloudProviders {
+		cloudProvider, err := cloud.NewProvider(dbCloudProvider.Type, dbCloudProvider.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		cloudProviders[dbCloudProvider.Name] = cloudProvider
 	}
 
 	return &Core{
-		cloud: cloudProvider,
-		db:    conf.DB,
-		wb:    conf.WorkerBackend,
+		cloudProviders: cloudProviders,
+		db:             conf.DB,
+		wb:             conf.WorkerBackend,
 	}, nil
 }
 
@@ -132,7 +138,16 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
-	instance, err := c.cloud.Create(id, cloud.CreateAttributes{
+	cloudProvider, ok := c.cloudProviders[dbInstance.ProviderName]
+	if !ok {
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"instance_id":   id,
+			"provider_name": dbInstance.ProviderName,
+		}).Error("couldn't find provider with given name")
+		return err
+	}
+
+	instance, err := cloudProvider.Create(id, cloud.CreateAttributes{
 		ImageName:    dbInstance.Image,
 		InstanceType: cloud.InstanceType(dbInstance.InstanceType),
 		PublicSSHKey: dbInstance.PublicSSHKey,
@@ -166,38 +181,41 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 }
 
 func (c *Core) ProviderRefresh(ctx context.Context) error {
-	instances, err := c.cloud.List()
-	if err != nil {
-		return err
-	}
-
-	for _, instance := range instances {
-		dbInstance, err := c.db.GetInstance(instance.ID)
+	for providerName, cloudProvider := range c.cloudProviders {
+		// TODO(henrikhodne): An error on one provider shouldn't affect other providers
+		instances, err := cloudProvider.List()
 		if err != nil {
-			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-				"provider":    c.cloud.Name(),
-				"provider_id": instance.ID,
-			}).Error("failed fetching instance from database")
-			continue
+			return err
 		}
 
-		dbInstance.IPAddress = instance.IPAddress
-		dbInstance.State = string(instance.State)
+		for _, instance := range instances {
+			dbInstance, err := c.db.GetInstance(instance.ID)
+			if err != nil {
+				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+					"provider_name": providerName,
+					"provider_id":   instance.ID,
+				}).Error("failed fetching instance from database")
+				continue
+			}
 
-		err = c.db.UpdateInstance(dbInstance)
-		if err != nil {
-			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-				"provider":    c.cloud.Name(),
-				"provider_id": instance.ID,
-				"db_id":       dbInstance.ID,
-			}).Error("failed to update instance in database")
+			dbInstance.IPAddress = instance.IPAddress
+			dbInstance.State = string(instance.State)
+
+			err = c.db.UpdateInstance(dbInstance)
+			if err != nil {
+				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+					"provider":    providerName,
+					"provider_id": instance.ID,
+					"db_id":       dbInstance.ID,
+				}).Error("failed to update instance in database")
+			}
 		}
-	}
 
-	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-		"provider":       c.cloud.Name(),
-		"instance_count": len(instances),
-	}).Info("refreshed instances")
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"provider":       providerName,
+			"instance_count": len(instances),
+		}).Info("refreshed instances")
+	}
 
 	return nil
 }
