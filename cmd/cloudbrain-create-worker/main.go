@@ -20,8 +20,8 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "cloudbrain-http"
-	app.Usage = "Run the HTTP server part of Cloud Brain"
+	app.Name = "cloudbrain-create-worker"
+	app.Usage = "Run the 'create instance' background worker"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
