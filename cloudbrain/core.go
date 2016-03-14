@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/hashicorp/go-multierror"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
@@ -173,11 +174,13 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 	c.cloudProvidersMutex.Lock()
 	defer c.cloudProvidersMutex.Unlock()
 
+	var result error
+
 	for providerName, cloudProvider := range c.cloudProviders {
-		// TODO(henrikhodne): An error on one provider shouldn't affect other providers
 		instances, err := cloudProvider.List()
 		if err != nil {
-			return err
+			result = multierror.Append(result, err)
+			continue
 		}
 
 		for _, instance := range instances {
@@ -209,7 +212,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 		}).Info("refreshed instances")
 	}
 
-	return nil
+	return result
 }
 
 func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
