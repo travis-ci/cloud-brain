@@ -72,6 +72,8 @@ func (p *FakeProvider) Create(id string, attrs CreateAttributes) (Instance, erro
 	return Instance{}, fmt.Errorf("unknown image")
 }
 
+// Get returns the instance with the given ID, or an error if the instance
+// wasn't found
 func (p *FakeProvider) Get(id string) (Instance, error) {
 	p.instancesMutex.Lock()
 	defer p.instancesMutex.Unlock()
@@ -84,6 +86,8 @@ func (p *FakeProvider) Get(id string) (Instance, error) {
 	return instance, nil
 }
 
+// Destroy deletes the instance with the given ID. Returns an error if an
+// instance with the given ID doesn't exist.
 func (p *FakeProvider) Destroy(id string) error {
 	p.instancesMutex.Lock()
 	defer p.instancesMutex.Unlock()

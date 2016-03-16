@@ -27,6 +27,9 @@ func registerProvider(alias, humanReadableName string, providerFunc func([]byte)
 	}
 }
 
+// NewProvider creates a new provider given the alias and provider-specific
+// configuration. The alias must match what is passed to registerProvider by the
+// provider, and the configuration is passed to the provider for parsing.
 func NewProvider(alias string, cfg []byte) (Provider, error) {
 	backendRegistryMutex.Lock()
 	defer backendRegistryMutex.Unlock()
