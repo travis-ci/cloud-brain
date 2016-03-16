@@ -3,52 +3,40 @@ package cloudbrain
 import (
 	"crypto/subtle"
 	"encoding/hex"
+	"fmt"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/hashicorp/go-multierror"
+	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
-	"github.com/travis-ci/cloud-brain/worker"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/net/context"
 )
 
+// MaxCreateRetries is the number of times the "create" job will be retried.
 const MaxCreateRetries = 10
 
+// Core is used as a central manager for all Cloud Brain functionality. The HTTP
+// API and the background workers are just frontends for the Core, and calls
+// methods on Core for functionality.
 type Core struct {
-	cloudProviders map[string]cloud.Provider
-	db             database.DB
-	wb             worker.Backend
+	db database.DB
+	bb background.Backend
+
+	cloudProvidersMutex sync.Mutex
+	cloudProviders      map[string]cloud.Provider
 }
 
-// TODO(henrikhodne): Is this necessary? Why not just make a Core directly?
-type CoreConfig struct {
-	DB            database.DB
-	WorkerBackend worker.Backend
-}
-
-func NewCore(conf *CoreConfig) (*Core, error) {
-	dbCloudProviders, err := conf.DB.ListProviders()
-	if err != nil {
-		return nil, err
-	}
-
-	cloudProviders := make(map[string]cloud.Provider)
-
-	for _, dbCloudProvider := range dbCloudProviders {
-		cloudProvider, err := cloud.NewProvider(dbCloudProvider.Type, dbCloudProvider.Config)
-		if err != nil {
-			return nil, err
-		}
-
-		cloudProviders[dbCloudProvider.Name] = cloudProvider
-	}
-
+// NewCore is used to create a new Core backed by the given database and
+// background Backend.
+func NewCore(db database.DB, bb background.Backend) *Core {
 	return &Core{
-		cloudProviders: cloudProviders,
-		db:             conf.DB,
-		wb:             conf.WorkerBackend,
-	}, nil
+		db: db,
+		bb: bb,
+	}
 }
 
 // GetInstance gets the instance information stored in the database for a given
@@ -99,7 +87,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		return nil, err
 	}
 
-	err = c.wb.Enqueue(worker.Job{
+	err = c.bb.Enqueue(background.Job{
 		Context:    ctx,
 		Payload:    []byte(id),
 		Queue:      "create",
@@ -122,6 +110,8 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 	}, nil
 }
 
+// ProviderCreateInstance is used to schedule the creation of the instance with
+// the given ID on the provider selected for that instance.
 func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error {
 	id := string(byteID)
 
@@ -138,11 +128,12 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
-	cloudProvider, ok := c.cloudProviders[dbInstance.ProviderName]
-	if !ok {
+	cloudProvider, err := c.cloudProvider(dbInstance.ProviderName)
+	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 			"instance_id":   id,
 			"provider_name": dbInstance.ProviderName,
+			"err":           err,
 		}).Error("couldn't find provider with given name")
 		return err
 	}
@@ -180,12 +171,20 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 	return nil
 }
 
+// ProviderRefresh is used to synchronize the data on all the cloud providers
+// with the data in our database.
 func (c *Core) ProviderRefresh(ctx context.Context) error {
+	c.refreshProviders()
+	c.cloudProvidersMutex.Lock()
+	defer c.cloudProvidersMutex.Unlock()
+
+	var result error
+
 	for providerName, cloudProvider := range c.cloudProviders {
-		// TODO(henrikhodne): An error on one provider shouldn't affect other providers
 		instances, err := cloudProvider.List()
 		if err != nil {
-			return err
+			result = multierror.Append(result, err)
+			continue
 		}
 
 		for _, instance := range instances {
@@ -217,9 +216,12 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 		}).Info("refreshed instances")
 	}
 
-	return nil
+	return result
 }
 
+// CheckToken is used to check whether a given tokenID+token is in the database.
+// Returns (true, nil) iff the token is valid, (false, nil) if the token is
+// invalid, and (false, err) if an error occurred while fetching the token.
 func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
 	salt, hash, err := c.db.GetSaltAndHashForTokenID(tokenID)
 	if err != nil {
@@ -239,6 +241,60 @@ func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
 	return subtle.ConstantTimeCompare(generatedHash, hash) == 1, nil
 }
 
+// cloudProvider is used to get the provider implementation for the cloud
+// provider with a given name. Return an error if no cloud provider with the
+// given name exists, or if an error occurred refreshing the configuration from
+// the database.
+func (c *Core) cloudProvider(name string) (cloud.Provider, error) {
+	c.cloudProvidersMutex.Lock()
+	cloudProvider, ok := c.cloudProviders[name]
+	c.cloudProvidersMutex.Unlock()
+	if !ok {
+		err := c.refreshProviders()
+		if err != nil {
+			return nil, err
+		}
+
+		c.cloudProvidersMutex.Lock()
+		cloudProvider, ok = c.cloudProviders[name]
+		c.cloudProvidersMutex.Unlock()
+		if !ok {
+			// This really shouldn't happen, since the database should ensure
+			// that a provider with a matching name exists.
+			return nil, fmt.Errorf("couldn't find a provider with that name")
+		}
+	}
+
+	return cloudProvider, nil
+}
+
+// refreshProviders is used to regenerate the c.cloudProviders map with the
+// configurations stored in the database.
+func (c *Core) refreshProviders() error {
+	c.cloudProvidersMutex.Lock()
+	defer c.cloudProvidersMutex.Unlock()
+	dbCloudProviders, err := c.db.ListProviders()
+	if err != nil {
+		return err
+	}
+
+	cloudProviders := make(map[string]cloud.Provider)
+
+	for _, dbCloudProvider := range dbCloudProviders {
+		cloudProvider, err := cloud.NewProvider(dbCloudProvider.Type, dbCloudProvider.Config)
+		if err != nil {
+			return err
+		}
+
+		cloudProviders[dbCloudProvider.Name] = cloudProvider
+	}
+
+	c.cloudProviders = cloudProviders
+
+	return nil
+}
+
+// Instance is a single compute instance.
 type Instance struct {
 	ID           string
 	ProviderName string

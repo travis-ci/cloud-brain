@@ -12,16 +12,16 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/lib/pq"
+	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
-	"github.com/travis-ci/cloud-brain/worker"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "cloudbrain-http"
-	app.Usage = "Run the HTTP server part of Cloud Brain"
+	app.Name = "cloudbrain-refresh-worker"
+	app.Usage = "Run the 'refresh providers' background worker"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -92,7 +92,7 @@ func mainAction(c *cli.Context) {
 			return err
 		},
 	}
-	workerBackend := worker.NewRedisWorker(redisPool, c.String("redis-worker-prefix"))
+	backgroundBackend := background.NewRedisBackend(redisPool, c.String("redis-worker-prefix"))
 
 	if c.String("database-url") == "" {
 		cbcontext.LoggerFromContext(ctx).Fatal("database-url flag is required")
@@ -111,13 +111,7 @@ func mainAction(c *cli.Context) {
 
 	db := database.NewPostgresDB(encryptionKey, pgdb)
 
-	core, err := cloudbrain.NewCore(&cloudbrain.CoreConfig{
-		DB:            db,
-		WorkerBackend: workerBackend,
-	})
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't configure core")
-	}
+	core := cloudbrain.NewCore(db, backgroundBackend)
 
 	var errorCount uint
 	for {

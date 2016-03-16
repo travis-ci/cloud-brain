@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -29,9 +27,11 @@ EOF
 `))
 
 func init() {
-	Register("gce", "Google Compute Engine", NewGCEProviderFromJSON)
+	registerProvider("gce", "Google Compute Engine", NewGCEProviderFromJSON)
 }
 
+// GCEProvider is an implementation of cloud.Provider backed by Google Compute
+// Engine.
 type GCEProvider struct {
 	client         *compute.Service
 	projectID      string
@@ -58,17 +58,21 @@ type gceInstanceConfig struct {
 	Network            *compute.Network
 	DiskType           string
 	DiskSize           int64
-	AutoImplode        bool
 	HardTimeoutMinutes int64
+	AutoImplode        bool
 	Preemptible        bool
 }
 
+// GCEAccountJSON represents the JSON key file received from GCE when creating a
+// new key for a service account.
 type GCEAccountJSON struct {
 	ClientEmail string `json:"client_email"`
 	PrivateKey  string `json:"private_key"`
 	TokenURI    string `json:"token_uri"`
 }
 
+// GCEProviderConfiguration contains all the configuration needed to create a
+// GCEProvider.
 type GCEProviderConfiguration struct {
 	AccountJSON         GCEAccountJSON `json:"account_json"`
 	ProjectID           string         `json:"project_id"`
@@ -78,8 +82,8 @@ type GCEProviderConfiguration struct {
 	PremiumMachineType  string         `json:"premium_machine_type"`
 	Network             string         `json:"network"`
 	DiskSize            int64          `json:"disk_size"`
-	AutoImplode         bool           `json:"auto_implode"`
 	AutoImplodeTime     time.Duration  `json:"auto_implode_time"`
+	AutoImplode         bool           `json:"auto_implode"`
 	Preemptible         bool           `json:"preemptible"`
 }
 
@@ -89,6 +93,9 @@ type gceStartupScriptInfo struct {
 	SSHPubKey          string
 }
 
+// NewGCEProviderFromJSON deserializes the given jsonConfig into a
+// GCEProviderConfiguration and creates a GCEProvider from that. Used to
+// register the provider with the registry.
 func NewGCEProviderFromJSON(jsonConfig []byte) (Provider, error) {
 	var config GCEProviderConfiguration
 	err := json.Unmarshal(jsonConfig, &config)
@@ -99,6 +106,7 @@ func NewGCEProviderFromJSON(jsonConfig []byte) (Provider, error) {
 	return NewGCEProvider(config)
 }
 
+// NewGCEProvider creates a new GCEProvider with the given configuration.
 func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 	clientConfig := &jwt.Config{
 		Email:      conf.AccountJSON.ClientEmail,
@@ -153,33 +161,8 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 	}, nil
 }
 
-func loadGoogleAccountJSON(filenameOrJSON string) (*GCEAccountJSON, error) {
-	var (
-		reader io.Reader
-		err    error
-	)
-
-	if strings.HasPrefix(strings.TrimSpace(filenameOrJSON), "{") {
-		reader = bytes.NewReader([]byte(filenameOrJSON))
-	} else {
-		var file *os.File
-		file, err = os.Open(filenameOrJSON)
-		if err != nil {
-			return nil, err
-		}
-		defer file.Close()
-		reader = file
-	}
-
-	a := &GCEAccountJSON{}
-	err = json.NewDecoder(reader).Decode(a)
-	return a, err
-}
-
-func (p *GCEProvider) Name() string {
-	return "gce"
-}
-
+// List returns a list of all instances on Google Compute Engine that was\
+// created by Cloud Brain.
 func (p *GCEProvider) List() ([]Instance, error) {
 	instanceList, err := p.client.Instances.List(p.projectID, p.ic.Zone.Name).Filter("name eq ^testing-gce-.+").Do()
 	if err != nil {
@@ -223,6 +206,8 @@ func (p *GCEProvider) List() ([]Instance, error) {
 	return instances, nil
 }
 
+// Create creates a new instance with the given ID and using the given
+// attributes.
 func (p *GCEProvider) Create(id string, attr CreateAttributes) (Instance, error) {
 	state := &multistep.BasicStateBag{}
 
@@ -388,6 +373,10 @@ func (p *GCEProvider) buildInstance(id string, createAttrs CreateAttributes, ima
 	}
 }
 
+// Get retrieves information about the instance with the given name from Google
+// Compute Engine. Return ErrInstanceNotFound if an instance with the given ID
+// wasn't found, or some other error if we were unable to get information about
+// the instance.
 func (p *GCEProvider) Get(id string) (Instance, error) {
 	gceInstance, err := p.client.Instances.Get(p.projectID, p.ic.Zone.Name, fmt.Sprintf("testing-gce-%s", id)).Do()
 	if err != nil {
@@ -428,6 +417,10 @@ func (p *GCEProvider) Get(id string) (Instance, error) {
 	return instance, nil
 }
 
+// Destroy terminates and removes the instance with the given ID. Returns
+// ErrInstanceNotFound if an instance with the given ID wasn't found, or some
+// other error if another error occurred. Does not wait for the instance to
+// terminate, will return as soon as the destroy job is enqueued with GCE.
 func (p *GCEProvider) Destroy(id string) error {
 	_, err := p.client.Instances.Delete(p.projectID, p.ic.Zone.Name, fmt.Sprintf("testing-gce-%s", id)).Do()
 	if err != nil {

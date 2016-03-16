@@ -3,8 +3,11 @@ package database
 
 import "errors"
 
+// ErrInstanceNotFound is returned from DB methods when an instance with the
+// given ID could not be found.
 var ErrInstanceNotFound = errors.New("instance not found")
 
+// DB is implemented by the supported database backends.
 type DB interface {
 	// Inserts the instance into the database, returns the id or an error.
 	CreateInstance(instance Instance) (string, error)
@@ -30,6 +33,7 @@ type DB interface {
 	CreateProvider(provider Provider) (string, error)
 }
 
+// Instance contains the data stored about a compute instance in the database.
 type Instance struct {
 	ID           string
 	ProviderName string
@@ -40,9 +44,18 @@ type Instance struct {
 	IPAddress    string
 }
 
+// Provider contains the data stored about a cloud provider in the database.
 type Provider struct {
-	ID     string
-	Type   string
-	Name   string
+	// ID is a UUID for this provider
+	ID string
+
+	// Type should match up with the alias passed into cloud.NewProvider
+	Type string
+
+	// Name is a unique name passed to the HTTP API to specify which provider to
+	// create an instance on.
+	Name string
+
+	// Config is a provider-specific configuration, passed to cloud.NewProvider.
 	Config []byte
 }
