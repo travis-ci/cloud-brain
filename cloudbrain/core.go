@@ -16,8 +16,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+// MaxCreateRetries is the number of times the "create" job will be retried.
 const MaxCreateRetries = 10
 
+// Core is used as a central manager for all Cloud Brain functionality. The HTTP
+// API and the background workers are just frontends for the Core, and calls
+// methods on Core for functionality.
 type Core struct {
 	db database.DB
 	bb background.Backend
@@ -26,6 +30,8 @@ type Core struct {
 	cloudProviders      map[string]cloud.Provider
 }
 
+// NewCore is used to create a new Core backed by the given database and
+// background Backend.
 func NewCore(db database.DB, bb background.Backend) *Core {
 	return &Core{
 		db: db,
@@ -104,6 +110,8 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 	}, nil
 }
 
+// ProviderCreateInstance is used to schedule the creation of the instance with
+// the given ID on the provider selected for that instance.
 func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error {
 	id := string(byteID)
 
@@ -163,6 +171,8 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 	return nil
 }
 
+// ProviderRefresh is used to synchronize the data on all the cloud providers
+// with the data in our database.
 func (c *Core) ProviderRefresh(ctx context.Context) error {
 	c.refreshProviders()
 	c.cloudProvidersMutex.Lock()
@@ -209,6 +219,9 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 	return result
 }
 
+// CheckToken is used to check whether a given tokenID+token is in the database.
+// Returns (true, nil) iff the token is valid, (false, nil) if the token is
+// invalid, and (false, err) if an error occurred while fetching the token.
 func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
 	salt, hash, err := c.db.GetSaltAndHashForTokenID(tokenID)
 	if err != nil {
@@ -228,6 +241,10 @@ func (c *Core) CheckToken(tokenID uint64, token string) (bool, error) {
 	return subtle.ConstantTimeCompare(generatedHash, hash) == 1, nil
 }
 
+// cloudProvider is used to get the provider implementation for the cloud
+// provider with a given name. Return an error if no cloud provider with the
+// given name exists, or if an error occurred refreshing the configuration from
+// the database.
 func (c *Core) cloudProvider(name string) (cloud.Provider, error) {
 	c.cloudProvidersMutex.Lock()
 	cloudProvider, ok := c.cloudProviders[name]
@@ -251,6 +268,8 @@ func (c *Core) cloudProvider(name string) (cloud.Provider, error) {
 	return cloudProvider, nil
 }
 
+// refreshProviders is used to regenerate the c.cloudProviders map with the
+// configurations stored in the database.
 func (c *Core) refreshProviders() error {
 	c.cloudProvidersMutex.Lock()
 	defer c.cloudProvidersMutex.Unlock()
@@ -275,6 +294,7 @@ func (c *Core) refreshProviders() error {
 	return nil
 }
 
+// Instance is a single compute instance.
 type Instance struct {
 	ID           string
 	ProviderName string
