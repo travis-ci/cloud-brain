@@ -29,7 +29,7 @@ EOF
 `))
 
 func init() {
-	Register("gce", "Google Compute Engine", NewGCEProviderFromJSON)
+	registerProvider("gce", "Google Compute Engine", NewGCEProviderFromJSON)
 }
 
 type GCEProvider struct {

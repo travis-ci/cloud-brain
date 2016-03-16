@@ -16,7 +16,7 @@ type backendRegistryEntry struct {
 	ProviderFunc      func([]byte) (Provider, error)
 }
 
-func Register(alias, humanReadableName string, providerFunc func([]byte) (Provider, error)) {
+func registerProvider(alias, humanReadableName string, providerFunc func([]byte) (Provider, error)) {
 	backendRegistryMutex.Lock()
 	defer backendRegistryMutex.Unlock()
 
