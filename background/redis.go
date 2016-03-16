@@ -38,6 +38,9 @@ func NewRedisBackend(pool *redis.Pool, prefix string) *RedisBackend {
 	}
 }
 
+// Enqueue pushes a job onto the given queue, to be picked up again by
+// FetchWork. Returns an error if the job couldn't be pushed on the queue, or
+// nil.
 func (rb *RedisBackend) Enqueue(job Job) error {
 	rj := rb.jobToRedisJob(job)
 
@@ -58,6 +61,9 @@ func (rb *RedisBackend) Enqueue(job Job) error {
 	return err
 }
 
+// FetchWork blocks until a job is available on the given queue, then returns
+// that job. Returns an error if an error occurred while trying to get a job
+// from the queue, in which case the job value should be an empty struct.
 func (rb *RedisBackend) FetchWork(queue string) (Job, error) {
 	conn := rb.pool.Get()
 	defer conn.Close()
@@ -94,6 +100,8 @@ func (rb *RedisBackend) FetchWork(queue string) (Job, error) {
 	}, nil
 }
 
+// ScheduleAt enqueues the given job at the given time. Returns an error if one
+// occurred while trying to schedule the job. Accurate within about 15 seconds.
 func (rb *RedisBackend) ScheduleAt(t time.Time, job Job) error {
 	rj := rb.jobToRedisJob(job)
 

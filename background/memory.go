@@ -5,17 +5,21 @@ import (
 	"time"
 )
 
+// MemoryBackend is an implementation of Backend that keeps all its data in
+// memory. Useful for testing.
 type MemoryBackend struct {
 	jobsMutex sync.Mutex
 	jobs      map[string][]Job
 }
 
+// NewMemoryBackend created a new empty MemoryBackend
 func NewMemoryBackend() *MemoryBackend {
 	return &MemoryBackend{
 		jobs: make(map[string][]Job),
 	}
 }
 
+// Enqueue pushes a job onto the given queue. Never returns an error.
 func (mb *MemoryBackend) Enqueue(job Job) error {
 	mb.jobsMutex.Lock()
 	defer mb.jobsMutex.Unlock()
@@ -28,6 +32,8 @@ func (mb *MemoryBackend) Enqueue(job Job) error {
 	return nil
 }
 
+// FetchWork blocks until a job is available on the given queue, then returns
+// that job. Never returns an error.
 func (mb *MemoryBackend) FetchWork(queue string) (Job, error) {
 	mb.jobsMutex.Lock()
 	if _, ok := mb.jobs[queue]; !ok {
@@ -51,6 +57,7 @@ func (mb *MemoryBackend) FetchWork(queue string) (Job, error) {
 	}
 }
 
+// ScheduleAt enqueues the given job at the given time. Never returns an error.
 func (mb *MemoryBackend) ScheduleAt(t time.Time, job Job) error {
 	go func() {
 		time.Sleep(t.Sub(time.Now()))

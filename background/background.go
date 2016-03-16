@@ -36,6 +36,7 @@ func (wf WorkerFunc) Work(ctx context.Context, payload []byte) error {
 	return wf(ctx, payload)
 }
 
+// Job contains all of the information needed for a given job.
 type Job struct {
 	Context    context.Context
 	Payload    []byte
