@@ -12,6 +12,7 @@ There are two main parts of Cloud Brain: An HTTP API, and a background worker. T
 
 The codebase is divided into a few different subpackages:
 
+- `background`: Contains a library for running jobs in background workers.
 - `cbcontext`: Contains some wrappers around the [context](http://godoc.org/golang.org/x/net/context) package, which is used all over the remainder of the codebase.
 - `cloud`: Contains the implementations for the various cloud providers.
 - `cloudbrain`: Contains the "main business logic". Should, generally speaking, be the main entry point for any API calls. The `http` package should only do HTTP-related things and then call this.
@@ -23,7 +24,6 @@ The codebase is divided into a few different subpackages:
 - `database`: Contains all the database-specific logic.
 - `http`: Contains the HTTP API logic. This should only do HTTP-specific things (like serialization and specific HTTP errors), but should call into the `cloudbrain` package for the actual business logic.
 - `sqitch`: Not a Go package, but contains all the files for [Sqitch](http://sqitch.org/), which is used for database migrations.
-- `worker`: Contains a library for running jobs in background workers.
 
 ## HTTP API
 

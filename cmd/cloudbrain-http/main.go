@@ -12,11 +12,11 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/lib/pq"
+	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	cbhttp "github.com/travis-ci/cloud-brain/http"
-	"github.com/travis-ci/cloud-brain/worker"
 )
 
 func main() {
@@ -99,7 +99,7 @@ func mainAction(c *cli.Context) {
 			return err
 		},
 	}
-	workerBackend := worker.NewRedisWorker(redisPool, c.String("redis-worker-prefix"))
+	backgroundBackend := background.NewRedisBackend(redisPool, c.String("redis-worker-prefix"))
 
 	if c.String("database-url") == "" {
 		cbcontext.LoggerFromContext(ctx).Fatal("database-url flag is required")
@@ -111,8 +111,8 @@ func mainAction(c *cli.Context) {
 	db := database.NewPostgresDB([32]byte{}, pgdb)
 
 	core, err := cloudbrain.NewCore(&cloudbrain.CoreConfig{
-		DB:            db,
-		WorkerBackend: workerBackend,
+		DB:                db,
+		BackgroundBackend: backgroundBackend,
 	})
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't configure core")

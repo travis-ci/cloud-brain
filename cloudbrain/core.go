@@ -8,10 +8,10 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/hashicorp/go-multierror"
+	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
-	"github.com/travis-ci/cloud-brain/worker"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/net/context"
 )
@@ -20,7 +20,7 @@ const MaxCreateRetries = 10
 
 type Core struct {
 	db database.DB
-	wb worker.Backend
+	bb background.Backend
 
 	cloudProvidersMutex sync.Mutex
 	cloudProviders      map[string]cloud.Provider
@@ -28,14 +28,14 @@ type Core struct {
 
 // TODO(henrikhodne): Is this necessary? Why not just make a Core directly?
 type CoreConfig struct {
-	DB            database.DB
-	WorkerBackend worker.Backend
+	DB                database.DB
+	BackgroundBackend background.Backend
 }
 
 func NewCore(conf *CoreConfig) (*Core, error) {
 	return &Core{
 		db: conf.DB,
-		wb: conf.WorkerBackend,
+		bb: conf.BackgroundBackend,
 	}, nil
 }
 
@@ -87,7 +87,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		return nil, err
 	}
 
-	err = c.wb.Enqueue(worker.Job{
+	err = c.bb.Enqueue(background.Job{
 		Context:    ctx,
 		Payload:    []byte(id),
 		Queue:      "create",

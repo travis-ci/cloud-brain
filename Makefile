@@ -1,4 +1,5 @@
 PACKAGES := \
+	github.com/travis-ci/cloud-brain/background \
 	github.com/travis-ci/cloud-brain/cbcontext \
 	github.com/travis-ci/cloud-brain/cloud \
 	github.com/travis-ci/cloud-brain/cloudbrain \
@@ -7,8 +8,7 @@ PACKAGES := \
 	github.com/travis-ci/cloud-brain/cmd/cloudbrain-http \
 	github.com/travis-ci/cloud-brain/cmd/cloudbrain-refresh-worker \
 	github.com/travis-ci/cloud-brain/database \
-	github.com/travis-ci/cloud-brain/http \
-	github.com/travis-ci/cloud-brain/worker
+	github.com/travis-ci/cloud-brain/http
 
 BINARY_NAMES := $(notdir $(wildcard cmd/*))
 BINARIES := $(addprefix bin/,$(BINARY_NAMES))
@@ -20,6 +20,10 @@ test: deps
 .PHONY: list-deps
 list-deps:
 	go list -f '{{ join .Imports "\n" }}' $(PACKAGES) | sort | uniq
+
+.PHONY: lint
+lint:
+	gometalinter --deadline=1m -Dstructcheck -Derrcheck -Dgotype -s vendor ./...
 
 .PHONY: heroku
 heroku:

@@ -1,5 +1,6 @@
-// Package worker implements the background worker portions of Cloud Brain
-package worker
+// Package background contains the tools necessary for running jobs in the
+// background.
+package background
 
 import (
 	"time"
@@ -10,18 +11,27 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Backend is the interface that must be implemented by background worker
+// backends.
 type Backend interface {
 	Enqueue(job Job) error
 	FetchWork(queue string) (Job, error)
 	ScheduleAt(t time.Time, job Job) error
 }
 
+// Worker is the interface that must be implemented by something that wants to
+// receive background jobs. It's passed to background.Run.
 type Worker interface {
 	Work(ctx context.Context, payload []byte) error
 }
 
+// WorkerFunc implements the Worker interface so regular functions can be used
+// as workers. If f is a function with the appropriate signature, WorkerFunc(f)
+// is a Worker that calls f for each job.
 type WorkerFunc func(ctx context.Context, payload []byte) error
 
+// Work calls the function with the given arguments. This makes WorkerFunc
+// implement Worker.
 func (wf WorkerFunc) Work(ctx context.Context, payload []byte) error {
 	return wf(ctx, payload)
 }

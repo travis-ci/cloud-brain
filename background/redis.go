@@ -1,4 +1,4 @@
-package worker
+package background
 
 import (
 	"bytes"
@@ -13,8 +13,8 @@ import (
 	"github.com/travis-ci/cloud-brain/cbcontext"
 )
 
-// RedisWorker is a worker.Backend implementation backed by Redis.
-type RedisWorker struct {
+// RedisBackend is a Backend implementation backed by Redis.
+type RedisBackend struct {
 	pool   *redis.Pool
 	prefix string
 }
@@ -30,16 +30,16 @@ type redisJob struct {
 	RetriedAt  time.Time
 }
 
-// NewRedisWorker creates a RedisWorker that connects to the given redis.Pool
-func NewRedisWorker(pool *redis.Pool, prefix string) *RedisWorker {
-	return &RedisWorker{
+// NewRedisBackend creates a RedisBackend that connects to the given redis.Pool
+func NewRedisBackend(pool *redis.Pool, prefix string) *RedisBackend {
+	return &RedisBackend{
 		pool:   pool,
 		prefix: prefix,
 	}
 }
 
-func (rw *RedisWorker) Enqueue(job Job) error {
-	rj := rw.jobToRedisJob(job)
+func (rb *RedisBackend) Enqueue(job Job) error {
+	rj := rb.jobToRedisJob(job)
 
 	payload := new(bytes.Buffer)
 	err := gob.NewEncoder(payload).Encode(rj)
@@ -47,22 +47,22 @@ func (rw *RedisWorker) Enqueue(job Job) error {
 		return err
 	}
 
-	conn := rw.pool.Get()
+	conn := rb.pool.Get()
 	defer conn.Close()
 
 	conn.Send("MULTI")
-	conn.Send("SADD", rw.key("queues"), job.Queue)
-	conn.Send("LPUSH", rw.key("queue:"+job.Queue), payload.Bytes())
+	conn.Send("SADD", rb.key("queues"), job.Queue)
+	conn.Send("LPUSH", rb.key("queue:"+job.Queue), payload.Bytes())
 	_, err = conn.Do("EXEC")
 
 	return err
 }
 
-func (rw *RedisWorker) FetchWork(queue string) (Job, error) {
-	conn := rw.pool.Get()
+func (rb *RedisBackend) FetchWork(queue string) (Job, error) {
+	conn := rb.pool.Get()
 	defer conn.Close()
 
-	reply, err := redis.ByteSlices(conn.Do("BRPOP", rw.key("queue:"+queue), "0"))
+	reply, err := redis.ByteSlices(conn.Do("BRPOP", rb.key("queue:"+queue), "0"))
 	if err != nil {
 		return Job{}, err
 	}
@@ -94,8 +94,8 @@ func (rw *RedisWorker) FetchWork(queue string) (Job, error) {
 	}, nil
 }
 
-func (rw *RedisWorker) ScheduleAt(t time.Time, job Job) error {
-	rj := rw.jobToRedisJob(job)
+func (rb *RedisBackend) ScheduleAt(t time.Time, job Job) error {
+	rj := rb.jobToRedisJob(job)
 
 	payload := new(bytes.Buffer)
 	err := gob.NewEncoder(payload).Encode(rj)
@@ -103,14 +103,14 @@ func (rw *RedisWorker) ScheduleAt(t time.Time, job Job) error {
 		return err
 	}
 
-	conn := rw.pool.Get()
+	conn := rb.pool.Get()
 	defer conn.Close()
 
-	_, err = conn.Do("ZADD", rw.key("schedule"), strconv.FormatInt(t.Unix(), 10), payload.Bytes())
+	_, err = conn.Do("ZADD", rb.key("schedule"), strconv.FormatInt(t.Unix(), 10), payload.Bytes())
 	return err
 }
 
-func (rw *RedisWorker) jobToRedisJob(job Job) redisJob {
+func (rb *RedisBackend) jobToRedisJob(job Job) redisJob {
 	rj := redisJob{
 		Payload:    job.Payload,
 		Queue:      job.Queue,
@@ -128,7 +128,7 @@ func (rw *RedisWorker) jobToRedisJob(job Job) redisJob {
 	return rj
 }
 
-func (rw *RedisWorker) redisJobToJob(rj redisJob) Job {
+func (rb *RedisBackend) redisJobToJob(rj redisJob) Job {
 	ctx := context.TODO()
 	if rj.UUID != "" {
 		ctx = cbcontext.FromUUID(ctx, rj.UUID)
@@ -146,14 +146,14 @@ func (rw *RedisWorker) redisJobToJob(rj redisJob) Job {
 	}
 }
 
-func (rw *RedisWorker) pollAndEnqueue() {
+func (rb *RedisBackend) pollAndEnqueue() {
 	// Sleep for 0-5 seconds to make sure every process doesn't hit Redis at
 	// once, avoiding a thundering herd scenario
 	initialWait := time.Duration(rand.Intn(5)) * time.Second
 	time.Sleep(initialWait)
 
 	for {
-		rw.enqueueJobs(time.Now())
+		rb.enqueueJobs(time.Now())
 
 		// TODO(henrikhodne): This should ideally be scaled to be 15*number of
 		// workers
@@ -162,14 +162,14 @@ func (rw *RedisWorker) pollAndEnqueue() {
 	}
 }
 
-func (rw *RedisWorker) enqueueJobs(now time.Time) {
-	conn := rw.pool.Get()
+func (rb *RedisBackend) enqueueJobs(now time.Time) {
+	conn := rb.pool.Get()
 	defer conn.Close()
 
 	nowStr := strconv.FormatInt(now.Unix(), 10)
 
 	for {
-		payloads, err := redis.ByteSlices(conn.Do("ZRANGEBYSCORE", rw.key("schedule"), "-inf", nowStr, "LIMIT", "0", "1"))
+		payloads, err := redis.ByteSlices(conn.Do("ZRANGEBYSCORE", rb.key("schedule"), "-inf", nowStr, "LIMIT", "0", "1"))
 		if err != nil {
 			// TODO(henrikhodne): Log error?
 			continue
@@ -181,7 +181,7 @@ func (rw *RedisWorker) enqueueJobs(now time.Time) {
 
 		payload := payloads[0]
 
-		removed, err := redis.Int64(conn.Do("ZREM", rw.key("schedule"), payload))
+		removed, err := redis.Int64(conn.Do("ZREM", rb.key("schedule"), payload))
 		if err != nil {
 			// TODO(henrikhodne): Log error?
 			continue
@@ -202,7 +202,7 @@ func (rw *RedisWorker) enqueueJobs(now time.Time) {
 			continue
 		}
 
-		err = rw.Enqueue(rw.redisJobToJob(rj))
+		err = rb.Enqueue(rb.redisJobToJob(rj))
 		if err != nil {
 			// TODO(henrikhodne): Log error?
 			continue
@@ -210,10 +210,10 @@ func (rw *RedisWorker) enqueueJobs(now time.Time) {
 	}
 }
 
-func (rw *RedisWorker) key(key string) string {
-	if rw.prefix == "" {
+func (rb *RedisBackend) key(key string) string {
+	if rb.prefix == "" {
 		return key
 	}
 
-	return rw.prefix + ":" + key
+	return rb.prefix + ":" + key
 }
