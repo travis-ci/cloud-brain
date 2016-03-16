@@ -9,10 +9,6 @@ import (
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 )
 
-// MaxCreateRetries is the number of times the background "create" job will be
-// retried before giving up.
-const MaxCreateRetries = 10
-
 func handleInstances(ctx context.Context, core *cloudbrain.Core) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -87,6 +83,8 @@ func instanceToResponse(instance *cloudbrain.Instance) *InstanceResponse {
 	return body
 }
 
+// An InstanceResponse is returned by the HTTP API that contains information
+// about an instance.
 type InstanceResponse struct {
 	ID           string  `json:"id"`
 	ProviderName string  `json:"provider"`
@@ -95,6 +93,8 @@ type InstanceResponse struct {
 	State        string  `json:"state"`
 }
 
+// CreateInstanceRequest contains the data in the request body for a create
+// instance request.
 type CreateInstanceRequest struct {
 	Provider     string `json:"provider"`
 	Image        string `json:"image"`

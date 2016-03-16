@@ -53,6 +53,7 @@ func respondOk(w http.ResponseWriter, body interface{}) {
 	}
 }
 
+// An ErrorResponse is returned by the HTTP API when an error occurs.
 type ErrorResponse struct {
 	Errors []string `json:"errors"`
 }
