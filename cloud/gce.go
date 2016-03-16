@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -58,8 +56,8 @@ type gceInstanceConfig struct {
 	Network            *compute.Network
 	DiskType           string
 	DiskSize           int64
-	AutoImplode        bool
 	HardTimeoutMinutes int64
+	AutoImplode        bool
 	Preemptible        bool
 }
 
@@ -78,8 +76,8 @@ type GCEProviderConfiguration struct {
 	PremiumMachineType  string         `json:"premium_machine_type"`
 	Network             string         `json:"network"`
 	DiskSize            int64          `json:"disk_size"`
-	AutoImplode         bool           `json:"auto_implode"`
 	AutoImplodeTime     time.Duration  `json:"auto_implode_time"`
+	AutoImplode         bool           `json:"auto_implode"`
 	Preemptible         bool           `json:"preemptible"`
 }
 
@@ -151,29 +149,6 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 			Network:            network,
 		},
 	}, nil
-}
-
-func loadGoogleAccountJSON(filenameOrJSON string) (*GCEAccountJSON, error) {
-	var (
-		reader io.Reader
-		err    error
-	)
-
-	if strings.HasPrefix(strings.TrimSpace(filenameOrJSON), "{") {
-		reader = bytes.NewReader([]byte(filenameOrJSON))
-	} else {
-		var file *os.File
-		file, err = os.Open(filenameOrJSON)
-		if err != nil {
-			return nil, err
-		}
-		defer file.Close()
-		reader = file
-	}
-
-	a := &GCEAccountJSON{}
-	err = json.NewDecoder(reader).Decode(a)
-	return a, err
 }
 
 func (p *GCEProvider) List() ([]Instance, error) {
