@@ -26,17 +26,11 @@ type Core struct {
 	cloudProviders      map[string]cloud.Provider
 }
 
-// TODO(henrikhodne): Is this necessary? Why not just make a Core directly?
-type CoreConfig struct {
-	DB                database.DB
-	BackgroundBackend background.Backend
-}
-
-func NewCore(conf *CoreConfig) (*Core, error) {
+func NewCore(db database.DB, bb background.Backend) *Core {
 	return &Core{
-		db: conf.DB,
-		bb: conf.BackgroundBackend,
-	}, nil
+		db: db,
+		bb: bb,
+	}
 }
 
 // GetInstance gets the instance information stored in the database for a given

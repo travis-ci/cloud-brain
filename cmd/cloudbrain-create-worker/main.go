@@ -105,13 +105,7 @@ func mainAction(c *cli.Context) {
 
 	db := database.NewPostgresDB(encryptionKey, pgdb)
 
-	core, err := cloudbrain.NewCore(&cloudbrain.CoreConfig{
-		DB:                db,
-		BackgroundBackend: backgroundBackend,
-	})
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("couldn't configure core")
-	}
+	core := cloudbrain.NewCore(db, backgroundBackend)
 
 	err = background.Run(ctx, "create", backgroundBackend, background.WorkerFunc(core.ProviderCreateInstance))
 	if err != nil {
