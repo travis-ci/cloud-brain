@@ -10,11 +10,15 @@ import (
 	"github.com/pborman/uuid"
 )
 
+// PostgresDB is a DB implementation backed by a Postgres database.
 type PostgresDB struct {
 	encryptionKey [32]byte
 	db            *sql.DB
 }
 
+// NewPostgresDB creates a new PostgresDB that uses the given sql.DB (must be a
+// postgres connection). The encryptionKey must be provided if getting encrypted
+// data, but can be nil if no encrypted data is needed.
 func NewPostgresDB(encryptionKey [32]byte, db *sql.DB) *PostgresDB {
 	return &PostgresDB{
 		encryptionKey: encryptionKey,
@@ -22,6 +26,9 @@ func NewPostgresDB(encryptionKey [32]byte, db *sql.DB) *PostgresDB {
 	}
 }
 
+// CreateInstance stores the given instance in teh database. A new UUID is
+// generated for it and returned. If an error occurrs, the empty string and the
+// error is returned.
 func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 	instance.ID = uuid.New()
 
@@ -47,6 +54,9 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 	return instance.ID, nil
 }
 
+// GetInstance returns the instance with the given ID from the database. If no
+// instance with the given ID exists, ErrInstanceNotFound is returned. If an
+// error occurs, then an empty Instance struct and the error is returned.
 func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 	instance := Instance{ID: id}
 	var ipAddress, sshKey sql.NullString
@@ -73,6 +83,12 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 	return instance, nil
 }
 
+// UpdateInstance updates the instane with the given ID in the database to match
+// the given attributes. Returns ErrInstanceNotFound if an instance with the
+// given ID isn't found.
+//
+// BUG(henrikhodne): ErrInstanceNotFound is not returned when an instance with
+// the given ID doesn't exist.
 func (db *PostgresDB) UpdateInstance(instance Instance) error {
 	_, err := db.db.Exec(
 		"UPDATE cloudbrain.instances SET provider_name = $1, image = $2, state = $3, ip_address = $4, ssh_key = $5 WHERE id = $6",
@@ -92,9 +108,13 @@ func (db *PostgresDB) UpdateInstance(instance Instance) error {
 	return err
 }
 
-func (db *PostgresDB) GetSaltAndHashForTokenID(tokenID uint64) ([]byte, []byte, error) {
-	var salt, hash []byte
-	err := db.db.QueryRow(
+// GetSaltAndHashForTokenID returns the salt and hash for the token with the
+// given ID.
+//
+// BUG(henrikhodne): Should return a special error if no token with the given
+// ID exists.
+func (db *PostgresDB) GetSaltAndHashForTokenID(tokenID uint64) (salt []byte, hash []byte, err error) {
+	err = db.db.QueryRow(
 		"SELECT token_salt, token_hash FROM cloudbrain.auth_tokens WHERE id = $1",
 		tokenID,
 	).Scan(&salt, &hash)
@@ -102,6 +122,8 @@ func (db *PostgresDB) GetSaltAndHashForTokenID(tokenID uint64) ([]byte, []byte, 
 	return salt, hash, err
 }
 
+// InsertToken inserts a token into the database with the given description, hash
+// and salt.
 func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64, error) {
 	var id uint64
 	err := db.db.QueryRow(
@@ -117,6 +139,10 @@ func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64
 	return id, err
 }
 
+// ListProviders returns a list of all the providers and their configurations.
+//
+// A valid encryption key must have been provided to NewPostgresDB for this to
+// work, or an error will always be returned.
 func (db *PostgresDB) ListProviders() ([]Provider, error) {
 	rows, err := db.db.Query("SELECT id, type, name, config FROM cloudbrain.providers")
 	if err != nil {
@@ -149,6 +175,10 @@ func (db *PostgresDB) ListProviders() ([]Provider, error) {
 	return providers, nil
 }
 
+// CreateProvider inserts a provider with the given data into the database.
+//
+// A valid encryption key must have been provided to NewPostgresDB for this to
+// work, or the stored configuration will not be valid.
 func (db *PostgresDB) CreateProvider(provider Provider) (string, error) {
 	if provider.ID == "" {
 		provider.ID = uuid.New()
@@ -170,6 +200,12 @@ func (db *PostgresDB) CreateProvider(provider Provider) (string, error) {
 	return provider.ID, nil
 }
 
+// decrypt is used to decrypt encrypted data using the encryption key
+//
+// Uses NaCl's secretbox algorithm. The ciphertext must start with the 24-byte
+// nonce.
+//
+// Returns (nil, false) if the ciphertext or the key is invalid.
 func (db *PostgresDB) decrypt(ciphertext []byte) ([]byte, bool) {
 	if len(ciphertext) < 24 {
 		return nil, false
@@ -182,6 +218,8 @@ func (db *PostgresDB) decrypt(ciphertext []byte) ([]byte, bool) {
 	return secretbox.Open(nil, box, &nonce, &db.encryptionKey)
 }
 
+// encrypt is used to encrypt data, which can be decrypted again by decrypt if
+// the same encryption key is used.
 func (db *PostgresDB) encrypt(plaintext []byte) []byte {
 	var nonce [24]byte
 	_, err := rand.Read(nonce[:])
