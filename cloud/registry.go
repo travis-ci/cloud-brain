@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	backendRegistry      = map[string]*Backend{}
+	backendRegistry      = map[string]*backendRegistryEntry{}
 	backendRegistryMutex sync.Mutex
 )
 
-type Backend struct {
+type backendRegistryEntry struct {
 	Alias             string
 	HumanReadableName string
 	ProviderFunc      func([]byte) (Provider, error)
@@ -20,7 +20,7 @@ func Register(alias, humanReadableName string, providerFunc func([]byte) (Provid
 	backendRegistryMutex.Lock()
 	defer backendRegistryMutex.Unlock()
 
-	backendRegistry[alias] = &Backend{
+	backendRegistry[alias] = &backendRegistryEntry{
 		Alias:             alias,
 		HumanReadableName: humanReadableName,
 		ProviderFunc:      providerFunc,
