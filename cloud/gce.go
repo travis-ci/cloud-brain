@@ -176,10 +176,6 @@ func loadGoogleAccountJSON(filenameOrJSON string) (*GCEAccountJSON, error) {
 	return a, err
 }
 
-func (p *GCEProvider) Name() string {
-	return "gce"
-}
-
 func (p *GCEProvider) List() ([]Instance, error) {
 	instanceList, err := p.client.Instances.List(p.projectID, p.ic.Zone.Name).Filter("name eq ^testing-gce-.+").Do()
 	if err != nil {

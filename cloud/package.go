@@ -10,7 +10,6 @@ var ErrInstanceNotFound = errors.New("could not find instance")
 // A Provider implements the methods necessary to manage Instances on a given
 // cloud provider.
 type Provider interface {
-	Name() string
 	List() ([]Instance, error)
 	Create(id string, attr CreateAttributes) (Instance, error)
 	Get(id string) (Instance, error)

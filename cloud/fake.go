@@ -26,10 +26,6 @@ func (p *FakeProvider) MarkRunning(id string) {
 	p.instances[inst.ID] = inst
 }
 
-func (p *FakeProvider) Name() string {
-	return "fake"
-}
-
 // List returns all the instances in the fake provider.
 func (p *FakeProvider) List() ([]Instance, error) {
 	if rand.Intn(10) == 0 {
