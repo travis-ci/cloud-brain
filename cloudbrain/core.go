@@ -148,6 +148,18 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 			"err":         err,
 			"instance_id": id,
 		}).Error("error creating instance")
+		dbInstance.State = "errored"
+
+		err = c.db.UpdateInstance(dbInstance)
+		if err != nil {
+			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+				"err":         err,
+				"instance_id": id,
+				"provider_id": instance.ID,
+			}).Error("couldn't update instance in DB")
+			return err
+		}
+
 		return err
 	}
 
