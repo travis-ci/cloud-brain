@@ -20,7 +20,7 @@ type RedisBackend struct {
 }
 
 type redisJob struct {
-	UUID       string
+	RequestID  string
 	Payload    []byte
 	Queue      string
 	MaxRetries uint
@@ -84,8 +84,8 @@ func (rb *RedisBackend) FetchWork(queue string) (Job, error) {
 	}
 
 	ctx := context.TODO()
-	if rj.UUID != "" {
-		ctx = cbcontext.FromUUID(ctx, rj.UUID)
+	if rj.RequestID != "" {
+		ctx = cbcontext.FromRequestID(ctx, rj.RequestID)
 	}
 
 	return Job{
@@ -128,9 +128,9 @@ func (rb *RedisBackend) jobToRedisJob(job Job) redisJob {
 		FailedAt:   job.FailedAt,
 		RetriedAt:  job.RetriedAt,
 	}
-	uuid, ok := cbcontext.UUIDFromContext(job.Context)
+	requestID, ok := cbcontext.RequestIDFromContext(job.Context)
 	if ok {
-		rj.UUID = uuid
+		rj.RequestID = requestID
 	}
 
 	return rj
@@ -138,8 +138,8 @@ func (rb *RedisBackend) jobToRedisJob(job Job) redisJob {
 
 func (rb *RedisBackend) redisJobToJob(rj redisJob) Job {
 	ctx := context.TODO()
-	if rj.UUID != "" {
-		ctx = cbcontext.FromUUID(ctx, rj.UUID)
+	if rj.RequestID != "" {
+		ctx = cbcontext.FromRequestID(ctx, rj.RequestID)
 	}
 
 	return Job{
