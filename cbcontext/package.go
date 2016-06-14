@@ -11,22 +11,23 @@ import (
 type contextKey int
 
 const (
-	uuidKey contextKey = iota
+	requestIDKey contextKey = iota
 )
 
-// FromUUID generates a new context with the given context as its parent, and
-// stores the given UUID with the context. The UUID can be retrieved again using
-// UUIDFromContext.
-func FromUUID(ctx context.Context, uuid string) context.Context {
-	return context.WithValue(ctx, uuidKey, uuid)
+// FromRequestID generates a new context with the given context as its parent,
+// and stores the given ID with the context. The ID can be retrieved again
+// using RequestIDFromContext. If this is the beginning of the request, it is inherited
+// from the X-Request-ID from Heroku.
+func FromRequestID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, requestIDKey, requestID)
 }
 
-// UUIDFromContext returns the UUID stored in the context with FromUUID. If no
-// UUID is stored in the context, the second argument is false. Otherwise it is
-// true.
-func UUIDFromContext(ctx context.Context) (string, bool) {
-	uuid, ok := ctx.Value(uuidKey).(string)
-	return uuid, ok
+// RequestIDFromContext returns the Request ID stored in the context with
+// FromRequestID. If no RequestID is stored in the context, the second argument
+// is false. Otherwise it is true.
+func RequestIDFromContext(ctx context.Context) (string, bool) {
+	requestID, ok := ctx.Value(requestIDKey).(string)
+	return requestID, ok
 }
 
 // LoggerFromContext returns a logrus.Entry with the PID of the current process
@@ -35,8 +36,8 @@ func UUIDFromContext(ctx context.Context) (string, bool) {
 func LoggerFromContext(ctx context.Context) *logrus.Entry {
 	entry := logrus.WithField("pid", os.Getpid())
 
-	if uuid, ok := UUIDFromContext(ctx); ok {
-		entry = entry.WithField("uuid", uuid)
+	if requestID, ok := RequestIDFromContext(ctx); ok {
+		entry = entry.WithField("request_id", requestID)
 	}
 
 	return entry
@@ -55,8 +56,8 @@ func CaptureError(ctx context.Context, err error) {
 	}
 
 	tags := make(map[string]string)
-	if uuid, ok := UUIDFromContext(ctx); ok {
-		tags["uuid"] = uuid
+	if requestID, ok := RequestIDFromContext(ctx); ok {
+		tags["requestID"] = requestID
 	}
 
 	packet := raven.NewPacket(

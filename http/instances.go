@@ -6,11 +6,14 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 )
 
 func handleInstances(ctx context.Context, core *cloudbrain.Core) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx = cbcontext.FromRequestID(ctx, r.Header.Get("X-Request-ID"))
+
 		switch r.Method {
 		case "GET":
 			handleInstancesGet(ctx, core, w, r)
@@ -37,7 +40,7 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 
 	instance, err := core.GetInstance(ctx, path)
 	if err != nil {
-		// TODO(henrikhodne): Log error
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Error("couldn't get instance")
 		respondError(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -51,6 +54,7 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 
 func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.ResponseWriter, r *http.Request) {
 	var req CreateInstanceRequest
+
 	if err := parseRequest(r, &req); err != nil {
 		respondError(w, http.StatusBadRequest, err)
 		return
