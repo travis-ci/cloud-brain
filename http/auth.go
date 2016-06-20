@@ -6,43 +6,50 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
+	"golang.org/x/net/context"
 )
 
 type authWrapper struct {
 	core    *cloudbrain.Core
 	handler http.Handler
+	ctx     context.Context
 }
 
 func (aw *authWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	prefix := "token "
 	if !strings.HasPrefix(r.Header.Get("Authorization"), prefix) {
-		respondError(w, http.StatusUnauthorized, fmt.Errorf("Authorization header required"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("Authorization header required"))
+		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("authorization header not present")
 		return
 	}
 
 	actualToken := r.Header.Get("Authorization")[len(prefix):]
 	components := strings.Split(actualToken, "-")
 	if len(components) != 2 {
-		respondError(w, http.StatusUnauthorized, fmt.Errorf("invalid token (should be using format \"id-token\")"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token (should be using format \"id-token\")"))
+		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("invalid token format")
 		return
 	}
 
 	tokenID, err := strconv.ParseUint(components[0], 10, 64)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, fmt.Errorf("invalid token (token ID must be numerical)"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token (token ID must be numerical)"))
+		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("non-numerical token ID")
 		return
 	}
 
 	validToken, err := aw.core.CheckToken(tokenID, components[1])
 	if err != nil {
-		// TODO(henrikhodne): Log error
-		respondError(w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("invalid token")
 		return
 	}
 
 	if !validToken {
-		respondError(w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("invalid token")
 		return
 	}
 
