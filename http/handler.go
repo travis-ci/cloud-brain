@@ -50,12 +50,14 @@ func respondOk(ctx context.Context, w http.ResponseWriter, body interface{}) {
 
 	status := http.StatusNoContent
 
-	if body != nil {
+	if body == nil {
+		w.WriteHeader(status)
+	} else {
 		status = http.StatusOK
+		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(body)
 	}
 
-	w.WriteHeader(status)
 	cbcontext.LoggerFromContext(ctx).WithField("response", status)
 }
 
