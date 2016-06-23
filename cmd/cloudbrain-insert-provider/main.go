@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codegangsta/cli"
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
+	"gopkg.in/urfave/cli.v2"
 )
 
 func main() {
@@ -19,102 +19,99 @@ func main() {
 	app.Usage = "Insert configuration for a provider into the database"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "database-url",
-			Usage:  "The URL for the PostgreSQL database to use",
-			EnvVar: "CLOUDBRAIN_DATABASE_URL,DATABASE_URL",
+		&cli.StringFlag{
+			Name:    "database-url",
+			Usage:   "The URL for the PostgreSQL database to use",
+			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
 		},
-		cli.StringFlag{
-			Name:   "database-encryption-key",
-			Usage:  "The database encryption key, hex-encoded",
-			EnvVar: "CLOUDBRAIN_DATABASE_ENCRYPTION_KEY",
+		&cli.StringFlag{
+			Name:    "database-encryption-key",
+			Usage:   "The database encryption key, hex-encoded",
+			EnvVars: []string{"CLOUDBRAIN_DATABASE_ENCRYPTION_KEY"},
 		},
-		cli.StringFlag{
-			Name:   "provider-name",
-			Usage:  "The name to assign to the provider being added",
-			EnvVar: "CLOUDBRAIN_PROVIDER_NAME",
+		&cli.StringFlag{
+			Name:    "provider-name",
+			Usage:   "The name to assign to the provider being added",
+			EnvVars: []string{"CLOUDBRAIN_PROVIDER_NAME"},
 		},
-		cli.StringFlag{
-			Name:   "gce-account-json",
-			Usage:  "A path pointing to the GCE account JSON file",
-			EnvVar: "CLOUDBRAIN_GCE_ACCOUNT_JSON",
+		&cli.StringFlag{
+			Name:    "gce-account-json",
+			Usage:   "A path pointing to the GCE account JSON file",
+			EnvVars: []string{"CLOUDBRAIN_GCE_ACCOUNT_JSON"},
 		},
-		cli.StringFlag{
-			Name:   "gce-project-id",
-			Usage:  "The GCE project ID for the project to boot instances in",
-			EnvVar: "CLOUDBRAIN_GCE_PROJECT_ID",
+		&cli.StringFlag{
+			Name:    "gce-project-id",
+			Usage:   "The GCE project ID for the project to boot instances in",
+			EnvVars: []string{"CLOUDBRAIN_GCE_PROJECT_ID"},
 		},
-		cli.StringFlag{
-			Name:   "gce-image-project-id",
-			Usage:  "The GCE project ID for the project containing the build environment images",
-			EnvVar: "CLOUDBRAIN_GCE_IMAGE_PROJECT_ID",
+		&cli.StringFlag{
+			Name:    "gce-image-project-id",
+			Usage:   "The GCE project ID for the project containing the build environment images",
+			EnvVars: []string{"CLOUDBRAIN_GCE_IMAGE_PROJECT_ID"},
 		},
-		cli.StringFlag{
-			Name:   "gce-zone",
-			Usage:  "The GCE zone to boot instances in",
-			Value:  "us-central1-a",
-			EnvVar: "CLOUDBRAIN_GCE_ZONE",
+		&cli.StringFlag{
+			Name:    "gce-zone",
+			Usage:   "The GCE zone to boot instances in",
+			Value:   "us-central1-a",
+			EnvVars: []string{"CLOUDBRAIN_GCE_ZONE"},
 		},
-		cli.StringFlag{
-			Name:   "gce-standard-machine-type",
-			Usage:  "The machine type to use for 'standard' instances",
-			Value:  "n1-standard-2",
-			EnvVar: "CLOUDBRAIN_GCE_STANDARD_MACHINE_TYPE",
+		&cli.StringFlag{
+			Name:    "gce-standard-machine-type",
+			Usage:   "The machine type to use for 'standard' instances",
+			Value:   "n1-standard-2",
+			EnvVars: []string{"CLOUDBRAIN_GCE_STANDARD_MACHINE_TYPE"},
 		},
-		cli.StringFlag{
-			Name:   "gce-premium-machine-type",
-			Usage:  "The machine type to use for 'premium' instances",
-			Value:  "n1-standard-4",
-			EnvVar: "CLOUDBRAIN_GCE_PREMIUM_MACHINE_TYPE",
+		&cli.StringFlag{
+			Name:    "gce-premium-machine-type",
+			Usage:   "The machine type to use for 'premium' instances",
+			Value:   "n1-standard-4",
+			EnvVars: []string{"CLOUDBRAIN_GCE_PREMIUM_MACHINE_TYPE"},
 		},
-		cli.StringFlag{
-			Name:   "gce-network",
-			Usage:  "The GCE network to connect instances to",
-			Value:  "default",
-			EnvVar: "CLOUDBRAIN_GCE_NETWORK",
+		&cli.StringFlag{
+			Name:    "gce-network",
+			Usage:   "The GCE network to connect instances to",
+			Value:   "default",
+			EnvVars: []string{"CLOUDBRAIN_GCE_NETWORK"},
 		},
-		cli.IntFlag{
-			Name:   "gce-disk-size",
-			Usage:  "The GCE disk size in GiB",
-			Value:  30,
-			EnvVar: "CLOUDBRAIN_GCE_DISK_SIZE",
+		&cli.IntFlag{
+			Name:    "gce-disk-size",
+			Usage:   "The GCE disk size in GiB",
+			Value:   30,
+			EnvVars: []string{"CLOUDBRAIN_GCE_DISK_SIZE"},
 		},
-		cli.BoolFlag{
-			Name:   "gce-auto-implode",
-			Usage:  "Enable to make the instance power off after gce-auto-implode-time if it's still running",
-			EnvVar: "CLOUDBRAIN_GCE_AUTO_IMPLODE",
+		&cli.BoolFlag{
+			Name:    "gce-auto-implode",
+			Usage:   "Enable to make the instance power off after gce-auto-implode-time if it's still running",
+			EnvVars: []string{"CLOUDBRAIN_GCE_AUTO_IMPLODE"},
 		},
-		cli.DurationFlag{
-			Name:   "gce-auto-implode-time",
-			Usage:  "How long to wait before auto-imploding. Will be rounded down to the nearest minute.",
-			EnvVar: "CLOUDBRAIN_GCE_AUTO_IMPLODE_TIME",
+		&cli.DurationFlag{
+			Name:    "gce-auto-implode-time",
+			Usage:   "How long to wait before auto-imploding. Will be rounded down to the nearest minute.",
+			EnvVars: []string{"CLOUDBRAIN_GCE_AUTO_IMPLODE_TIME"},
 		},
-		cli.BoolFlag{
-			Name:   "gce-preemptible",
-			Usage:  "Enable to use GCE preemptible instances",
-			EnvVar: "CLOUDBRAIN_GCE_PREEMPTIBLE",
+		&cli.BoolFlag{
+			Name:    "gce-preemptible",
+			Usage:   "Enable to use GCE preemptible instances",
+			EnvVars: []string{"CLOUDBRAIN_GCE_PREEMPTIBLE"},
 		},
 	}
 
 	app.Run(os.Args)
 }
 
-func mainAction(c *cli.Context) {
+func mainAction(c *cli.Context) error {
 	if c.String("database-url") == "" {
-		fmt.Printf("error: the DATABASE_URL environment variable must be set\n")
-		return
+		return fmt.Errorf("error: the DATABASE_URL environment variable must be set\n")
 	}
 	pgdb, err := sql.Open("postgres", c.String("database-url"))
 	if err != nil {
-		fmt.Printf("error: could not connect to the database: %v\n", err)
-		return
+		return fmt.Errorf("error: could not connect to the database: %v\n", err)
 	}
 
 	var encryptionKey [32]byte
 	keySlice, err := hex.DecodeString(c.String("database-encryption-key"))
 	if err != nil {
-		fmt.Printf("error: couldn't decode the database encryption key: %v\n", err)
-		return
+		return fmt.Errorf("error: couldn't decode the database encryption key: %v\n", err)
 	}
 	copy(encryptionKey[:], keySlice[0:32])
 
@@ -122,8 +119,7 @@ func mainAction(c *cli.Context) {
 
 	accountJSON, err := loadGoogleAccountJSON(c.String("gce-account-json"))
 	if err != nil {
-		fmt.Printf("error: couldn't load GCE account JSON file: %v\n", err)
-		return
+		return fmt.Errorf("error: couldn't load GCE account JSON file: %v\n", err)
 	}
 
 	providerConfig := cloud.GCEProviderConfiguration{
@@ -142,14 +138,12 @@ func mainAction(c *cli.Context) {
 
 	jsonConfig, err := json.Marshal(providerConfig)
 	if err != nil {
-		fmt.Printf("error: couldn't JSON-encode provider configuration: %v\n", err)
-		return
+		return fmt.Errorf("error: couldn't JSON-encode provider configuration: %v\n", err)
 	}
 
 	providerName := c.String("provider-name")
 	if providerName == "" {
-		fmt.Printf("error: provider name can't be blank\n")
-		return
+		return fmt.Errorf("error: provider name can't be blank\n")
 	}
 
 	id, err := db.CreateProvider(database.Provider{
@@ -159,11 +153,11 @@ func mainAction(c *cli.Context) {
 	})
 
 	if err != nil {
-		fmt.Printf("error: couldn't insert provider in database: %v\n", err)
-		return
+		return fmt.Errorf("error: couldn't insert provider in database: %v\n", err)
 	}
 
 	fmt.Printf("created provider %s with ID %s\n", providerName, id)
+	return nil
 }
 
 func loadGoogleAccountJSON(filename string) (cloud.GCEAccountJSON, error) {

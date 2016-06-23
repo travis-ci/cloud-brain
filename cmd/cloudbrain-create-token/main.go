@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codegangsta/cli"
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/database"
 	"golang.org/x/crypto/scrypt"
+	"gopkg.in/urfave/cli.v2"
 )
 
 func main() {
@@ -19,25 +19,23 @@ func main() {
 	app.Usage = "Create a token for use with the Cloud Brain HTTP API"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "database-url",
-			Usage:  "The URL for the PostgreSQL database to use",
-			EnvVar: "CLOUDBRAIN_DATABASE_URL,DATABASE_URL",
+		&cli.StringFlag{
+			Name:    "database-url",
+			Usage:   "The URL for the PostgreSQL database to use",
+			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
 		},
 	}
 
 	app.Run(os.Args)
 }
 
-func mainAction(c *cli.Context) {
+func mainAction(c *cli.Context) error {
 	if c.String("database-url") == "" {
-		fmt.Printf("error: the DATABASE_URL environment variable must be set\n")
-		return
+		return fmt.Errorf("error: the DATABASE_URL environment variable must be set\n")
 	}
 	pgdb, err := sql.Open("postgres", c.String("database-url"))
 	if err != nil {
-		fmt.Printf("error: could not connect to the database: %v\n", err)
-		return
+		return fmt.Errorf("error: could not connect to the database: %v\n", err)
 	}
 	db := database.NewPostgresDB([32]byte{}, pgdb)
 
@@ -45,28 +43,25 @@ func mainAction(c *cli.Context) {
 	token := make([]byte, 16)
 	_, err = rand.Read(salt)
 	if err != nil {
-		fmt.Printf("error: could not generate a random salt: %v\n", err)
-		return
+		return fmt.Errorf("error: could not generate a random salt: %v\n", err)
 	}
 	_, err = rand.Read(token)
 	if err != nil {
-		fmt.Printf("error: could not generate a random token: %v\n", err)
-		return
+		return fmt.Errorf("error: could not generate a random token: %v\n", err)
 	}
 
 	hashed, err := scrypt.Key(token, salt, 16384, 8, 1, 32)
 	if err != nil {
-		fmt.Printf("error: could not scrypt: %v\n", err)
-		return
+		return fmt.Errorf("error: could not scrypt: %v\n", err)
 	}
 
-	tokenID, err := db.InsertToken(c.Args()[0], hashed, salt)
+	tokenID, err := db.InsertToken(c.Args().Get(0), hashed, salt)
 	if err != nil {
-		fmt.Printf("error: couldn't insert the token into the database: %v\n", err)
-		return
+		return fmt.Errorf("error: couldn't insert the token into the database: %v\n", err)
 	}
 
 	encodedToken := hex.EncodeToString(token)
 
 	fmt.Printf("generated token: %d-%s\n", tokenID, encodedToken)
+	return nil
 }
