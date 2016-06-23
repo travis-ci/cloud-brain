@@ -43,7 +43,7 @@ func (aw *authWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	validToken, err := aw.core.CheckToken(tokenID, components[1])
 	if err != nil {
 		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
-		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("invalid token")
+		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("error fetching token")
 		return
 	}
 
