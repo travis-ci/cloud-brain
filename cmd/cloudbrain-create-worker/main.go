@@ -21,6 +21,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "cloudbrain-create-worker"
+	app.Version = cloudbrain.VersionString
+	app.Copyright = cloudbrain.CopyrightString
 	app.Usage = "Run the 'create instance' background worker"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{
