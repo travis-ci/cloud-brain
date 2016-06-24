@@ -20,7 +20,7 @@ func handleInstances(ctx context.Context, core *cloudbrain.Core) http.Handler {
 		case "POST":
 			handleInstancesPost(ctx, core, w, r)
 		default:
-			respondError(w, http.StatusMethodNotAllowed, nil)
+			respondError(ctx, w, http.StatusMethodNotAllowed, nil)
 		}
 	})
 }
@@ -29,34 +29,34 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 	// Determine the path...
 	prefix := "/instances/"
 	if !strings.HasPrefix(r.URL.Path, prefix) {
-		respondError(w, http.StatusNotFound, nil)
+		respondError(ctx, w, http.StatusNotFound, nil)
 		return
 	}
 	path := r.URL.Path[len(prefix):]
 	if path == "" {
-		respondError(w, http.StatusNotFound, nil)
+		respondError(ctx, w, http.StatusNotFound, nil)
 		return
 	}
 
 	instance, err := core.GetInstance(ctx, path)
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Error("couldn't get instance")
-		respondError(w, http.StatusInternalServerError, nil)
+		respondError(ctx, w, http.StatusInternalServerError, nil)
 		return
 	}
 	if instance == nil {
-		respondError(w, http.StatusNotFound, nil)
+		respondError(ctx, w, http.StatusNotFound, nil)
 		return
 	}
 
-	respondOk(w, instanceToResponse(instance))
+	respondOk(ctx, w, instanceToResponse(instance))
 }
 
 func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.ResponseWriter, r *http.Request) {
 	var req CreateInstanceRequest
 
-	if err := parseRequest(r, &req); err != nil {
-		respondError(w, http.StatusBadRequest, err)
+	if err := parseRequest(ctx, r, &req); err != nil {
+		respondError(ctx, w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -66,11 +66,11 @@ func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.Resp
 		PublicSSHKey: req.PublicSSHKey,
 	})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err)
+		respondError(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
 
-	respondOk(w, instanceToResponse(instance))
+	respondOk(ctx, w, instanceToResponse(instance))
 }
 
 func instanceToResponse(instance *cloudbrain.Instance) *InstanceResponse {
