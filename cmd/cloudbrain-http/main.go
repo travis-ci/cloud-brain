@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/background"
@@ -17,6 +16,7 @@ import (
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	cbhttp "github.com/travis-ci/cloud-brain/http"
+	"gopkg.in/urfave/cli.v2"
 )
 
 func main() {
@@ -25,39 +25,39 @@ func main() {
 	app.Usage = "Run the HTTP server part of Cloud Brain"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "redis-url",
-			EnvVar: "CLOUDBRAIN_REDIS_URL,REDIS_URL",
+		&cli.StringFlag{
+			Name:    "redis-url",
+			EnvVars: []string{"CLOUDBRAIN_REDIS_URL", "REDIS_URL"},
 		},
-		cli.IntFlag{
-			Name:   "redis-max-idle",
-			Value:  3,
-			Usage:  "The maximum number of idle Redis connections",
-			EnvVar: "CLOUDBRAIN_REDIS_MAX_IDLE",
+		&cli.IntFlag{
+			Name:    "redis-max-idle",
+			Value:   3,
+			Usage:   "The maximum number of idle Redis connections",
+			EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_IDLE"},
 		},
-		cli.IntFlag{
-			Name:   "redis-max-active",
-			Value:  5,
-			Usage:  "The maximum number of active Redis connections",
-			EnvVar: "CLOUDBRAIN_REDIS_MAX_ACTIVE",
+		&cli.IntFlag{
+			Name:    "redis-max-active",
+			Value:   5,
+			Usage:   "The maximum number of active Redis connections",
+			EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_ACTIVE"},
 		},
-		cli.DurationFlag{
-			Name:   "redis-idle-timeout",
-			Value:  3 * time.Minute,
-			EnvVar: "CLOUDBRAIN_REDIS_IDLE_TIMEOUT",
+		&cli.DurationFlag{
+			Name:    "redis-idle-timeout",
+			Value:   3 * time.Minute,
+			EnvVars: []string{"CLOUDBRAIN_REDIS_IDLE_TIMEOUT"},
 		},
-		cli.StringFlag{
-			Name:   "redis-worker-prefix",
-			Value:  "cloud-brain:worker",
-			Usage:  "The Redis key prefix to use for keys used by the background workers",
-			EnvVar: "CLOUDBRAIN_REDIS_WORKER_PREFIX",
+		&cli.StringFlag{
+			Name:    "redis-worker-prefix",
+			Value:   "cloud-brain:worker",
+			Usage:   "The Redis key prefix to use for keys used by the background workers",
+			EnvVars: []string{"CLOUDBRAIN_REDIS_WORKER_PREFIX"},
 		},
-		cli.StringFlag{
-			Name:   "database-url",
-			Usage:  "The URL for the PostgreSQL database to use",
-			EnvVar: "CLOUDBRAIN_DATABASE_URL,DATABASE_URL",
+		&cli.StringFlag{
+			Name:    "database-url",
+			Usage:   "The URL for the PostgreSQL database to use",
+			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "addr",
 			Usage: "host:port to listen to",
 			Value: func() string {
@@ -67,19 +67,19 @@ func main() {
 				}
 				return v
 			}(),
-			EnvVar: "CLOUDBRAIN_ADDR",
+			EnvVars: []string{"CLOUDBRAIN_ADDR"},
 		},
-		cli.StringSliceFlag{
-			Name:   "auth-token",
-			Usage:  "authentication token(s) to accept",
-			EnvVar: "CLOUDBRAIN_AUTH_TOKEN",
+		&cli.StringSliceFlag{
+			Name:    "auth-token",
+			Usage:   "authentication token(s) to accept",
+			EnvVars: []string{"CLOUDBRAIN_AUTH_TOKEN"},
 		},
 	}
 
 	app.Run(os.Args)
 }
 
-func mainAction(c *cli.Context) {
+func mainAction(c *cli.Context) error {
 	ctx := context.Background()
 	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 
@@ -116,4 +116,5 @@ func mainAction(c *cli.Context) {
 	if err != nil {
 		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("ListenAndServe returned error")
 	}
+	return nil
 }
