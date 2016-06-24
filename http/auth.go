@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,7 +19,7 @@ type authWrapper struct {
 func (aw *authWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	prefix := "token "
 	if !strings.HasPrefix(r.Header.Get("Authorization"), prefix) {
-		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("Authorization header required"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, errAuthorizationHeaderRequired)
 		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("authorization header not present")
 		return
 	}
@@ -28,27 +27,27 @@ func (aw *authWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	actualToken := r.Header.Get("Authorization")[len(prefix):]
 	components := strings.Split(actualToken, "-")
 	if len(components) != 2 {
-		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token (should be using format \"id-token\")"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, errNonNumericalTokenID)
 		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("invalid token format")
 		return
 	}
 
 	tokenID, err := strconv.ParseUint(components[0], 10, 64)
 	if err != nil {
-		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token (token ID must be numerical)"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, errNonNumericalTokenID)
 		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("non-numerical token ID")
 		return
 	}
 
 	validToken, err := aw.core.CheckToken(tokenID, components[1])
 	if err != nil {
-		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, errInvalidToken)
 		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("error fetching token")
 		return
 	}
 
 	if !validToken {
-		respondError(aw.ctx, w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		respondError(aw.ctx, w, http.StatusUnauthorized, errInvalidToken)
 		cbcontext.LoggerFromContext(aw.ctx).WithField("response", http.StatusUnauthorized).Info("invalid token")
 		return
 	}

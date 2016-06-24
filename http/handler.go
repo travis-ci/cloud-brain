@@ -11,6 +11,13 @@ import (
 	"golang.org/x/net/context"
 )
 
+var (
+	errAuthorizationHeaderRequired = fmt.Errorf("authorization header required")
+	errInvalidToken                = fmt.Errorf("invalid token")
+	errNonNumericalTokenID         = fmt.Errorf("invalid token (token ID must be numerical)")
+	errFetchingToken               = fmt.Errorf("error fetching token")
+)
+
 // Handler returns an http.Handler for the API.
 func Handler(ctx context.Context, core *cloudbrain.Core, authTokens []string) http.Handler {
 	mux := http.NewServeMux()
