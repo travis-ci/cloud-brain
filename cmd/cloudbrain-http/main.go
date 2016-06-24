@@ -22,6 +22,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "cloudbrain-http"
+	app.Version = cloudbrain.VersionString
+	app.Copyright = cloudbrain.CopyrightString
 	app.Usage = "Run the HTTP server part of Cloud Brain"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{

@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/travis-ci/cloud-brain/cloud"
+	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	"gopkg.in/urfave/cli.v2"
 )
@@ -16,6 +17,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "cloudbrain-insert-provider"
+	app.Version = cloudbrain.VersionString
+	app.Copyright = cloudbrain.CopyrightString
 	app.Usage = "Insert configuration for a provider into the database"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{

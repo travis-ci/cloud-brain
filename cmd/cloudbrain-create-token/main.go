@@ -8,6 +8,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
+	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
 	"golang.org/x/crypto/scrypt"
 	"gopkg.in/urfave/cli.v2"
@@ -16,6 +17,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "cloudbrain-create-token"
+	app.Version = cloudbrain.VersionString
+	app.Copyright = cloudbrain.CopyrightString
 	app.Usage = "Create a token for use with the Cloud Brain HTTP API"
 	app.Action = mainAction
 	app.Flags = []cli.Flag{

@@ -4,6 +4,8 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/Sirupsen/logrus"
@@ -14,7 +16,28 @@ import (
 	"github.com/travis-ci/cloud-brain/database"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/net/context"
+	"gopkg.in/urfave/cli.v2"
 )
+
+var (
+	VersionString     = "?"
+	RevisionString    = "?"
+	RevisionURLString = "?"
+	GeneratedString   = "?"
+	CopyrightString   = "?"
+)
+
+func init() {
+	cli.VersionPrinter = customVersionPrinter
+	_ = os.Setenv("VERSION", VersionString)
+	_ = os.Setenv("REVISION", RevisionString)
+	_ = os.Setenv("GENERATED", GeneratedString)
+}
+
+func customVersionPrinter(c *cli.Context) {
+	fmt.Printf("%v v=%v rev=%v d=%v\n", filepath.Base(c.App.Name),
+		VersionString, RevisionString, GeneratedString)
+}
 
 // MaxCreateRetries is the number of times the "create" job will be retried.
 const MaxCreateRetries = 10
