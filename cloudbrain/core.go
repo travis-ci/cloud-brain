@@ -21,11 +21,16 @@ import (
 )
 
 var (
-	VersionString     = "?"
-	RevisionString    = "?"
+	//VersionString gets set during `make`
+	VersionString = "?"
+	//RevisionString gets set during `make`
+	RevisionString = "?"
+	//RevisionURLString gets set during `make`
 	RevisionURLString = "?"
-	GeneratedString   = "?"
-	CopyrightString   = "?"
+	//GeneratedString gets set during `make`
+	GeneratedString = "?"
+	//CopyrightString gets set during `make`
+	CopyrightString = "?"
 )
 
 func init() {
