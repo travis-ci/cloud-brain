@@ -57,6 +57,10 @@ bin: deps $(BINARIES)
 clean:
 	$(RM) $(BINARIES)
 
+.PHONY: distclean
+distclean: clean
+	$(RM) vendor/.deps-fetched
+
 deps: $(GOPATH)/bin/gvt vendor/.deps-fetched
 
 $(GOPATH)/bin/gvt:
