@@ -10,6 +10,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pborman/uuid"
 	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
@@ -111,6 +112,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 	}
 
 	err = c.bb.Enqueue(background.Job{
+		UUID:       uuid.New(),
 		Context:    ctx,
 		Payload:    []byte(id),
 		Queue:      "create",

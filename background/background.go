@@ -38,6 +38,7 @@ func (wf WorkerFunc) Work(ctx context.Context, payload []byte) error {
 
 // Job contains all of the information needed for a given job.
 type Job struct {
+	UUID       string
 	Context    context.Context
 	Payload    []byte
 	Queue      string
@@ -51,7 +52,7 @@ type Job struct {
 	RetriedAt  time.Time
 }
 
-// Run will contiuously poll a daemon and run the job on the worker.
+// Run will continuously poll a daemon and run the job on the worker.
 func Run(ctx context.Context, queue string, backend Backend, worker Worker) error {
 	for {
 		job, err := backend.FetchWork(queue)
@@ -76,6 +77,7 @@ func Run(ctx context.Context, queue string, backend Backend, worker Worker) erro
 			} else {
 				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 					"err":       err,
+					"id":        job.UUID,
 					"retries":   job.RetryCount,
 					"failed_at": job.FailedAt,
 					"queue":     job.Queue,

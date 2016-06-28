@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/pborman/uuid"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 )
 
@@ -20,6 +21,7 @@ type RedisBackend struct {
 }
 
 type redisJob struct {
+	UUID       string
 	RequestID  string
 	Payload    []byte
 	Queue      string
@@ -84,12 +86,14 @@ func (rb *RedisBackend) FetchWork(queue string) (Job, error) {
 	}
 
 	ctx := context.TODO()
-	if rj.RequestID != "" {
-		ctx = cbcontext.FromRequestID(ctx, rj.RequestID)
+
+	if rj.UUID != "" {
+		rj.UUID = uuid.New()
 	}
 
 	return Job{
 		Context:    ctx,
+		UUID:       rj.UUID,
 		Payload:    rj.Payload,
 		Queue:      rj.Queue,
 		MaxRetries: rj.MaxRetries,
@@ -144,6 +148,7 @@ func (rb *RedisBackend) redisJobToJob(rj redisJob) Job {
 
 	return Job{
 		Context:    ctx,
+		UUID:       rj.UUID,
 		Payload:    rj.Payload,
 		Queue:      rj.Queue,
 		MaxRetries: rj.MaxRetries,
