@@ -10,6 +10,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pborman/uuid"
 	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
@@ -20,11 +21,16 @@ import (
 )
 
 var (
-	VersionString     = "?"
-	RevisionString    = "?"
+	//VersionString gets set during `make`
+	VersionString = "?"
+	//RevisionString gets set during `make`
+	RevisionString = "?"
+	//RevisionURLString gets set during `make`
 	RevisionURLString = "?"
-	GeneratedString   = "?"
-	CopyrightString   = "?"
+	//GeneratedString gets set during `make`
+	GeneratedString = "?"
+	//CopyrightString gets set during `make`
+	CopyrightString = "?"
 )
 
 func init() {
@@ -111,6 +117,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 	}
 
 	err = c.bb.Enqueue(background.Job{
+		UUID:       uuid.New(),
 		Context:    ctx,
 		Payload:    []byte(id),
 		Queue:      "create",
