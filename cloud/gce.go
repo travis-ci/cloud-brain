@@ -17,6 +17,8 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/mitchellh/multistep"
+	"github.com/travis-ci/cloud-brain/cbcontext"
+	"golang.org/x/net/context"
 )
 
 var gceStartupScript = template.Must(template.New("gce-startup").Parse(`#!/usr/bin/env bash
@@ -51,6 +53,17 @@ type gceStartContext struct {
 	instanceInsertOp *compute.Operation
 }
 
+type gceStopContext struct {
+	id               string
+	instChan         chan Instance
+	errChan          chan error
+	terminateStart   time.Time
+	instanceConfig   gceInstanceConfig
+	instance         *compute.Instance
+	instanceDeleteOp *compute.Operation
+	ctx              context.Context
+}
+
 type gceInstanceConfig struct {
 	MachineType        *compute.MachineType
 	PremiumMachineType *compute.MachineType
@@ -61,6 +74,9 @@ type gceInstanceConfig struct {
 	HardTimeoutMinutes int64
 	AutoImplode        bool
 	Preemptible        bool
+	SkipStopPoll       bool
+	StopPrePollSleep   time.Duration
+	StopPollSleep      time.Duration
 }
 
 // GCEAccountJSON represents the JSON key file received from GCE when creating a
@@ -243,6 +259,44 @@ func (p *GCEProvider) Create(id string, attr CreateAttributes) (Instance, error)
 		abandonedStart = true
 		return Instance{}, err
 	}
+}
+
+// Remove stops the instance with the given ID and terminates it.
+func (p *GCEProvider) Remove(id string) (Instance, error) {
+	state := &multistep.BasicStateBag{}
+
+	c := &gceStopContext{
+		id:       id,
+		instChan: make(chan Instance),
+		errChan:  make(chan error),
+	}
+
+	runner := &multistep.BasicRunner{
+		Steps: []multistep.Step{
+			&gceStopMultistepWrapper{c: c, f: p.stepDeleteInstance},
+		},
+	}
+
+	go runner.Run(state)
+
+	select {
+	case inst := <-c.instChan:
+		return inst, nil
+	case err := <-c.errChan:
+		return Instance{}, err
+	}
+}
+
+func (p *GCEProvider) stepDeleteInstance(c *gceStopContext) multistep.StepAction {
+	op, err := p.client.Instances.Delete(p.projectID, p.ic.Zone.Name, c.instance.Name).Do()
+	if err != nil {
+		cbcontext.LoggerFromContext(c.ctx).WithField("err", err).Error("error deleting instance")
+		c.errChan <- err
+		return multistep.ActionHalt
+	}
+
+	c.instanceDeleteOp = op
+	return multistep.ActionContinue
 }
 
 func (p *GCEProvider) stepGetImage(c *gceStartContext) multistep.StepAction {
@@ -437,8 +491,19 @@ type gceStartMultistepWrapper struct {
 	c *gceStartContext
 }
 
+type gceStopMultistepWrapper struct {
+	f func(*gceStopContext) multistep.StepAction
+	c *gceStopContext
+}
+
 func (gismw *gceStartMultistepWrapper) Run(multistep.StateBag) multistep.StepAction {
 	return gismw.f(gismw.c)
 }
 
 func (gismw *gceStartMultistepWrapper) Cleanup(multistep.StateBag) { return }
+
+func (gismw *gceStopMultistepWrapper) Run(multistep.StateBag) multistep.StepAction {
+	return gismw.f(gismw.c)
+}
+
+func (gismw *gceStopMultistepWrapper) Cleanup(multistep.StateBag) { return }
