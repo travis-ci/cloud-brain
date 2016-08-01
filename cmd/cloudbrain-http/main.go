@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	app := cli.NewApp()
+	app := &cli.App{}
 	app.Name = "cloudbrain-http"
 	app.Version = cloudbrain.VersionString
 	app.Copyright = cloudbrain.CopyrightString

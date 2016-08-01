@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	app := cli.NewApp()
+	app := &cli.App{}
 	app.Name = "cloudbrain-create-worker"
 	app.Version = cloudbrain.VersionString
 	app.Copyright = cloudbrain.CopyrightString

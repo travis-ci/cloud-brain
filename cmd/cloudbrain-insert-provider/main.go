@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	app := cli.NewApp()
+	app := &cli.App{}
 	app.Name = "cloudbrain-insert-provider"
 	app.Version = cloudbrain.VersionString
 	app.Copyright = cloudbrain.CopyrightString

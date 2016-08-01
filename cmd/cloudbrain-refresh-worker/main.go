@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	app := cli.NewApp()
+	app := &cli.App{}
 	app.Name = "cloudbrain-refresh-worker"
 	app.Version = cloudbrain.VersionString
 	app.Copyright = cloudbrain.CopyrightString
@@ -140,5 +140,4 @@ func mainAction(c *cli.Context) error {
 		time.Sleep(sleepTime)
 	}
 
-	return nil
 }
