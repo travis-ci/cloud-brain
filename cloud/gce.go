@@ -402,7 +402,7 @@ func (p *GCEProvider) buildInstance(id string, createAttrs CreateAttributes, ima
 			&compute.NetworkInterface{
 				AccessConfigs: []*compute.AccessConfig{
 					&compute.AccessConfig{
-						Name: "AccessConfig brought to you by travis-worker",
+						Name: "AccessConfig brought to you by cloud-brain",
 						Type: "ONE_TO_ONE_NAT",
 					},
 				},
