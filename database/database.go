@@ -12,6 +12,9 @@ type DB interface {
 	// Inserts the instance into the database, returns the id or an error.
 	CreateInstance(instance Instance) (string, error)
 
+	// Removes the instance from the database, returns the id or an error.
+	RemoveInstance(instance Instance) (string, error)
+
 	// Retrieves the instance by its ID, or returns an error
 	GetInstance(id string) (Instance, error)
 

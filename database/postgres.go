@@ -54,6 +54,21 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 	return instance.ID, nil
 }
 
+// RemoveInstance deletes the given instance from the database. If an
+// error occurs, the empty string and the error is returned.
+func (db *PostgresDB) RemoveInstance(instance Instance) (string, error) {
+
+	_, err := db.db.Exec(
+		"DELETE FROM cloudbrain.instances WHERE id = $1",
+		instance.ID,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return instance.ID, nil
+}
+
 // GetInstance returns the instance with the given ID from the database. If no
 // instance with the given ID exists, ErrInstanceNotFound is returned. If an
 // error occurs, then an empty Instance struct and the error is returned.
@@ -132,6 +147,7 @@ func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64
 		hash,
 		salt,
 	).Scan(&id)
+	// TODO: how bout some dates?
 	if err != nil {
 		return 0, err
 	}
