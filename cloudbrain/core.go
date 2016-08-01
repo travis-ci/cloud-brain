@@ -97,6 +97,11 @@ type CreateInstanceAttributes struct {
 	PublicSSHKey string
 }
 
+//DeleteInstanceAttributes contains attributes needed to delete an instance
+type DeleteInstanceAttributes struct {
+	InstanceID string
+}
+
 // CreateInstance creates an instance in the database and queues off the cloud
 // create job in the background.
 func (c *Core) CreateInstance(ctx context.Context, providerName string, attr CreateInstanceAttributes) (*Instance, error) {
@@ -137,6 +142,45 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		ProviderName: providerName,
 		Image:        attr.ImageName,
 		State:        "creating",
+	}, nil
+}
+
+// RemoveInstance creates an instance in the database and queues off the cloud
+// create job in the background.
+func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes) (*Instance, error) {
+	inst, err := c.db.GetInstance(attr.InstanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = c.db.RemoveInstance(inst)
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"err": err,
+		}).Error("error deleting instance in database")
+		return nil, err
+	}
+
+	err = c.bb.Enqueue(background.Job{
+		UUID:       uuid.New(),
+		Context:    ctx,
+		Payload:    []byte(attr.InstanceID),
+		Queue:      "remove",
+		MaxRetries: MaxCreateRetries,
+	})
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"err":         err,
+			"instance_id": attr.InstanceID,
+		}).Error("error enqueueing 'create' job in the background")
+		return nil, err
+	}
+
+	return &Instance{
+		ID: attr.InstanceID,
+		//ProviderName: providerName,
+		//Image:        attr.ImageName,
+		State: "removing",
 	}, nil
 }
 
