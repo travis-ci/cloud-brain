@@ -1,0 +1,39 @@
+version: '2'
+services:
+  cloudbrain-http:
+    build: .
+    ports:
+      - 42191:42191
+    volumes:
+     - .:/code
+    links:
+      - redis
+      - postgres
+    depends_on:
+     - redis
+     - postgres
+  cloudbrain-create-worker:
+    build: .
+    volumes:
+     - .:/code
+    links:
+      - redis
+      - postgres
+    depends_on:
+     - redis
+     - postgres
+  cloudbrain-refresh-worker:
+    build: .
+    volumes:
+     - .:/code
+    depends_on:
+     - redis
+     - postgres
+  redis:
+    image: redis
+    expose: 
+      - 6379
+  postgres:
+    image: postgres
+    expose: 
+      - 5432
