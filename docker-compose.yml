@@ -5,52 +5,49 @@ services:
     ports:
       - 42191:42191
     volumes:
-     - .:/code
+      - .:/code
+    env_file:
+      - dev.env
     links:
       - redis
       - postgres
     depends_on:
-     - redis
-     - postgres
-    environment: 
-     - REDIS_URL=redis://redis:6379
-     - DATABASE_URL=postgres://postgres:5432/?sslmode=disable
-     - DEBUG=1
+      - redis
+      - postgres
     command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-http" ]
   cloudbrain-create-worker:
     build: .
     volumes:
-     - .:/code
+      - .:/code
     links:
       - redis
       - postgres
     depends_on:
-     - redis
-     - postgres
-    environment: 
-     - REDIS_URL=redis://redis:6379
-     - DATABASE_URL=postgres://postgres:5432/?sslmode=disable
-     - DEBUG=1
-     - CLOUDBRAIN_DATABASE_ENCRYPTION_KEY=e266185db2078529ebfc4e3e93767491e266185db2078529ebfc4e3e93767491
+      - redis
+      - postgres
+    env_file:
+      - dev.env
+    environment:
+      - CLOUDBRAIN_DATABASE_ENCRYPTION_KEY=e266185db2078529ebfc4e3e93767491e266185db2078529ebfc4e3e93767491
     command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-create-worker" ]
   cloudbrain-refresh-worker:
     build: .
     volumes:
-     - .:/code
+      - .:/code
     depends_on:
-     - redis
-     - postgres
-    environment: 
-     - REDIS_URL=redis://redis:6379
-     - DATABASE_URL=postgres://postgres:5432/?sslmode=disable
-     - DEBUG=1
-     - CLOUDBRAIN_DATABASE_ENCRYPTION_KEY=e266185db2078529ebfc4e3e93767491e266185db2078529ebfc4e3e93767491
+      - redis
+      - postgres
+    env_file:
+      - dev.env
+    environment:
+      - CLOUDBRAIN_DATABASE_ENCRYPTION_KEY=e266185db2078529ebfc4e3e93767491e266185db2078529ebfc4e3e93767491
     command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-refresh-worker" ]
   redis:
     image: redis
-    expose: 
-      - 6379
   postgres:
     image: postgres
-    expose: 
-      - 5432
+    environment:
+      - POSTGRES_USER=cloudbrain
+      - POSTGRES_PASSWORD=travis
+    ports:
+      - 5432:5432
