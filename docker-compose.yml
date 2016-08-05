@@ -4,8 +4,6 @@ services:
     build: .
     ports:
       - 42191:42191
-    volumes:
-      - .:/code
     env_file:
       - dev.env
     links:
@@ -14,17 +12,17 @@ services:
     depends_on:
       - redis
       - postgres
+      - sqitch
     command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-http" ]
   cloudbrain-create-worker:
     build: .
-    volumes:
-      - .:/code
     links:
       - redis
       - postgres
     depends_on:
       - redis
       - postgres
+      - sqitch
     env_file:
       - dev.env
     environment:
@@ -32,11 +30,10 @@ services:
     command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-create-worker" ]
   cloudbrain-refresh-worker:
     build: .
-    volumes:
-      - .:/code
     depends_on:
       - redis
       - postgres
+      - sqitch
     env_file:
       - dev.env
     environment:
@@ -51,3 +48,8 @@ services:
       - POSTGRES_PASSWORD=travis
     ports:
       - 5432:5432
+  sqitch:
+    build:
+      context: ./sqitch
+    depends_on:
+      - postgres
