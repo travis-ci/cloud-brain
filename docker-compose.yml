@@ -1,0 +1,71 @@
+version: '2'
+services:
+  cloudbrain-http:
+    build:
+      context: .
+      args:
+        - DOCKER_BUILD_BIN=cloudbrain-http
+    ports:
+      - 42191:42191
+    env_file:
+      - dev.env
+    links:
+      - redis
+      - postgres
+    depends_on:
+      - redis
+      - postgres
+      - sqitch
+    command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-http" ]
+  cloudbrain-create-worker:
+    build:
+      context: .
+      args:
+        - DOCKER_BUILD_BIN=cloudbrain-create-worker
+    links:
+      - redis
+      - postgres
+    depends_on:
+      - redis
+      - postgres
+      - sqitch
+    env_file:
+      - dev.env
+    command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-create-worker" ]
+  cloudbrain-refresh-worker:
+    build:
+      context: .
+      args:
+        - DOCKER_BUILD_BIN=cloudbrain-refresh-worker
+    depends_on:
+      - redis
+      - postgres
+      - sqitch
+    env_file:
+      - dev.env
+    command: [ "/go/src/github.com/travis-ci/cloud-brain/bin/cloudbrain-refresh-worker" ]
+  cloudbrain-create-token:
+    build:
+      context: .
+      args:
+        - DOCKER_BUILD_BIN=cloudbrain-create-token
+    depends_on:
+      - postgres
+      - sqitch
+    env_file:
+      - dev.env
+    command: [ "sh", "/go/src/github.com/travis-ci/cloud-brain/cmd/cloudbrain-create-token/docker-create-token.sh" ]
+  redis:
+    image: redis
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=cloudbrain
+      - POSTGRES_PASSWORD=travis
+    ports:
+      - 5432:5432
+  sqitch:
+    build:
+      context: ./sqitch
+    depends_on:
+      - postgres
