@@ -88,8 +88,12 @@ func mainAction(c *cli.Context) error {
 			return err
 		},
 	}
+
 	backgroundBackend := background.NewRedisBackend(redisPool, c.String("redis-worker-prefix"))
-	backgroundBackend.WaitForConnection()
+	err := backgroundBackend.WaitForConnection()
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("background backend creation failed")
+	}
 
 	if c.String("database-url") == "" {
 		cbcontext.LoggerFromContext(ctx).Fatal("database-url flag is required")
