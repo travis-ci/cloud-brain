@@ -19,6 +19,11 @@ func NewMemoryBackend() *MemoryBackend {
 	}
 }
 
+// WaitForConnection waits for the backing store to become available.
+func (mb *MemoryBackend) WaitForConnection() error {
+	return nil
+}
+
 // Enqueue pushes a job onto the given queue. Never returns an error.
 func (mb *MemoryBackend) Enqueue(job Job) error {
 	mb.jobsMutex.Lock()
