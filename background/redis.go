@@ -49,9 +49,9 @@ func (rb *RedisBackend) WaitForConnection() error {
 	maxRetries := 10
 	for i := 0; i < maxRetries; i++ {
 		conn := rb.pool.Get()
-		defer conn.Close()
+		err = conn.Err()
+		conn.Close()
 
-		_, err = conn.Do("PING")
 		if err == nil {
 			return nil
 		}
