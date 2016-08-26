@@ -55,7 +55,7 @@ func (rb *RedisBackend) WaitForConnection() error {
 		if err == nil {
 			return nil
 		}
-		time.Sleep(1)
+		time.Sleep(1 * time.Second)
 	}
 	return errors.Wrap(err, "could not connect to redis after 10 retries")
 }
