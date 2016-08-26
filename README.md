@@ -6,6 +6,8 @@
 
 Cloud Brain is a service that provides a uniform API endpoint for all cloud compute services that Travis CI interacts with.
 
+This allows for instance creation, metadata, and deletion to be managed in a central place. It allows for generic cleanup tasks to be created. It allows for [worker](https://github.com/travis-ci/worker) to talk to a single service. And finally, it allows for pluggable cloud backends to be implemented, in order to support additional infrastructures.
+
 ## Architecture
 
 There are two main parts of Cloud Brain: An HTTP API, and a background worker. The HTTP API does not interact with the compute providers directly, it will queue jobs for the background worker to do that.
