@@ -89,6 +89,7 @@ func mainAction(c *cli.Context) error {
 		},
 	}
 	backgroundBackend := background.NewRedisBackend(redisPool, c.String("redis-worker-prefix"))
+	backgroundBackend.WaitForConnection()
 
 	if c.String("database-url") == "" {
 		cbcontext.LoggerFromContext(ctx).Fatal("database-url flag is required")

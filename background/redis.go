@@ -11,6 +11,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/pborman/uuid"
+	"github.com/pkg/errors"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 )
 
@@ -38,6 +39,25 @@ func NewRedisBackend(pool *redis.Pool, prefix string) *RedisBackend {
 		pool:   pool,
 		prefix: prefix,
 	}
+}
+
+// WaitForConnection waits for the backing store to become available.
+// Especially redis can take a while to boot
+// retry once a second for 10 seconds
+func (rb *RedisBackend) WaitForConnection() error {
+	var err error
+	maxRetries := 10
+	for i := 0; i < maxRetries; i++ {
+		conn := rb.pool.Get()
+		defer conn.Close()
+
+		_, err = conn.Do("PING")
+		if err == nil {
+			return nil
+		}
+		time.Sleep(1)
+	}
+	return errors.Wrap(err, "could not connect to redis after 10 retries")
 }
 
 // Enqueue pushes a job onto the given queue, to be picked up again by
