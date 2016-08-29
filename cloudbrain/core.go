@@ -139,15 +139,15 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 
 // RemoveInstance creates an instance in the database and queues off the cloud
 // create job in the background.
-func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes) (*Instance, error) {
+func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes) error {
 	inst, err := c.db.GetInstance(attr.InstanceID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = c.db.RemoveInstance(inst)
 	if err != nil {
-		return nil, errors.Wrap(err, "error deleting instance in database")
+		return errors.Wrap(err, "error deleting instance in database")
 	}
 
 	err = c.bb.Enqueue(background.Job{
@@ -158,15 +158,10 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 		MaxRetries: MaxCreateRetries,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "error enqueueing 'create' job in the background")
+		return errors.Wrap(err, "error enqueueing 'create' job in the background")
 	}
 
-	return &Instance{
-		ID: attr.InstanceID,
-		//ProviderName: providerName,
-		//Image:        attr.ImageName,
-		State: "removing",
-	}, nil
+	return nil
 }
 
 // ProviderCreateInstance is used to schedule the creation of the instance with

@@ -89,7 +89,7 @@ func handleInstancesDelete(ctx context.Context, core *cloudbrain.Core, w http.Re
 		return
 	}
 
-	_, err := core.RemoveInstance(ctx, cloudbrain.DeleteInstanceAttributes{
+	err = core.RemoveInstance(ctx, cloudbrain.DeleteInstanceAttributes{
 		InstanceID: req.InstanceID,
 	})
 	if err != nil {
