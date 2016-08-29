@@ -15,17 +15,18 @@ import (
 )
 
 func main() {
-	app := &cli.App{}
-	app.Name = "cloudbrain-create-token"
-	app.Version = cloudbrain.VersionString
-	app.Copyright = cloudbrain.CopyrightString
-	app.Usage = "Create a token for use with the Cloud Brain HTTP API"
-	app.Action = mainAction
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "database-url",
-			Usage:   "The URL for the PostgreSQL database to use",
-			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
+	app := &cli.App{
+		Name:      "cloudbrain-create-token",
+		Version:   cloudbrain.VersionString,
+		Copyright: cloudbrain.CopyrightString,
+		Usage:     "Create a token for use with the Cloud Brain HTTP API",
+		Action:    mainAction,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "database-url",
+				Usage:   "The URL for the PostgreSQL database to use",
+				EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
+			},
 		},
 	}
 
