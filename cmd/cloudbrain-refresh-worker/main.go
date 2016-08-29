@@ -20,55 +20,56 @@ import (
 )
 
 func main() {
-	app := &cli.App{}
-	app.Name = "cloudbrain-refresh-worker"
-	app.Version = cloudbrain.VersionString
-	app.Copyright = cloudbrain.CopyrightString
-	app.Usage = "Run the 'refresh providers' background worker"
-	app.Action = mainAction
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "redis-url",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_URL", "REDIS_URL"},
-		},
-		&cli.IntFlag{
-			Name:    "redis-max-idle",
-			Value:   3,
-			Usage:   "The maximum number of idle Redis connections",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_IDLE"},
-		},
-		&cli.IntFlag{
-			Name:    "redis-max-active",
-			Value:   5,
-			Usage:   "The maximum number of active Redis connections",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_ACTIVE"},
-		},
-		&cli.DurationFlag{
-			Name:    "redis-idle-timeout",
-			Value:   3 * time.Minute,
-			EnvVars: []string{"CLOUDBRAIN_REDIS_IDLE_TIMEOUT"},
-		},
-		&cli.StringFlag{
-			Name:    "redis-worker-prefix",
-			Value:   "cloud-brain:worker",
-			Usage:   "The Redis key prefix to use for keys used by the background workers",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_WORKER_PREFIX"},
-		},
-		&cli.StringFlag{
-			Name:    "database-url",
-			Usage:   "The URL for the PostgreSQL database to use",
-			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
-		},
-		&cli.StringFlag{
-			Name:    "database-encryption-key",
-			Usage:   "The database encryption key, hex-encoded",
-			EnvVars: []string{"CLOUDBRAIN_DATABASE_ENCRYPTION_KEY"},
-		},
-		&cli.DurationFlag{
-			Name:    "refresh-interval",
-			Usage:   "The interval at which to refresh the cached instances",
-			Value:   5 * time.Second,
-			EnvVars: []string{"CLOUDBRAIN_REFRESH_INTERVAL"},
+	app := &cli.App{
+		Name:      "cloudbrain-refresh-worker",
+		Version:   cloudbrain.VersionString,
+		Copyright: cloudbrain.CopyrightString,
+		Usage:     "Run the 'refresh providers' background worker",
+		Action:    mainAction,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "redis-url",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_URL", "REDIS_URL"},
+			},
+			&cli.IntFlag{
+				Name:    "redis-max-idle",
+				Value:   3,
+				Usage:   "The maximum number of idle Redis connections",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_IDLE"},
+			},
+			&cli.IntFlag{
+				Name:    "redis-max-active",
+				Value:   5,
+				Usage:   "The maximum number of active Redis connections",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_ACTIVE"},
+			},
+			&cli.DurationFlag{
+				Name:    "redis-idle-timeout",
+				Value:   3 * time.Minute,
+				EnvVars: []string{"CLOUDBRAIN_REDIS_IDLE_TIMEOUT"},
+			},
+			&cli.StringFlag{
+				Name:    "redis-worker-prefix",
+				Value:   "cloud-brain:worker",
+				Usage:   "The Redis key prefix to use for keys used by the background workers",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_WORKER_PREFIX"},
+			},
+			&cli.StringFlag{
+				Name:    "database-url",
+				Usage:   "The URL for the PostgreSQL database to use",
+				EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
+			},
+			&cli.StringFlag{
+				Name:    "database-encryption-key",
+				Usage:   "The database encryption key, hex-encoded",
+				EnvVars: []string{"CLOUDBRAIN_DATABASE_ENCRYPTION_KEY"},
+			},
+			&cli.DurationFlag{
+				Name:    "refresh-interval",
+				Usage:   "The interval at which to refresh the cached instances",
+				Value:   5 * time.Second,
+				EnvVars: []string{"CLOUDBRAIN_REFRESH_INTERVAL"},
+			},
 		},
 	}
 

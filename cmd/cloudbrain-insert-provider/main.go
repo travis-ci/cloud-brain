@@ -15,87 +15,88 @@ import (
 )
 
 func main() {
-	app := &cli.App{}
-	app.Name = "cloudbrain-insert-provider"
-	app.Version = cloudbrain.VersionString
-	app.Copyright = cloudbrain.CopyrightString
-	app.Usage = "Insert configuration for a provider into the database"
-	app.Action = mainAction
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "database-url",
-			Usage:   "The URL for the PostgreSQL database to use",
-			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
-		},
-		&cli.StringFlag{
-			Name:    "database-encryption-key",
-			Usage:   "The database encryption key, hex-encoded",
-			EnvVars: []string{"CLOUDBRAIN_DATABASE_ENCRYPTION_KEY"},
-		},
-		&cli.StringFlag{
-			Name:    "provider-name",
-			Usage:   "The name to assign to the provider being added",
-			EnvVars: []string{"CLOUDBRAIN_PROVIDER_NAME"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-account-json",
-			Usage:   "A path pointing to the GCE account JSON file",
-			EnvVars: []string{"CLOUDBRAIN_GCE_ACCOUNT_JSON"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-project-id",
-			Usage:   "The GCE project ID for the project to boot instances in",
-			EnvVars: []string{"CLOUDBRAIN_GCE_PROJECT_ID"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-image-project-id",
-			Usage:   "The GCE project ID for the project containing the build environment images",
-			EnvVars: []string{"CLOUDBRAIN_GCE_IMAGE_PROJECT_ID"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-zone",
-			Usage:   "The GCE zone to boot instances in",
-			Value:   "us-central1-a",
-			EnvVars: []string{"CLOUDBRAIN_GCE_ZONE"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-standard-machine-type",
-			Usage:   "The machine type to use for 'standard' instances",
-			Value:   "n1-standard-2",
-			EnvVars: []string{"CLOUDBRAIN_GCE_STANDARD_MACHINE_TYPE"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-premium-machine-type",
-			Usage:   "The machine type to use for 'premium' instances",
-			Value:   "n1-standard-4",
-			EnvVars: []string{"CLOUDBRAIN_GCE_PREMIUM_MACHINE_TYPE"},
-		},
-		&cli.StringFlag{
-			Name:    "gce-network",
-			Usage:   "The GCE network to connect instances to",
-			Value:   "default",
-			EnvVars: []string{"CLOUDBRAIN_GCE_NETWORK"},
-		},
-		&cli.IntFlag{
-			Name:    "gce-disk-size",
-			Usage:   "The GCE disk size in GiB",
-			Value:   30,
-			EnvVars: []string{"CLOUDBRAIN_GCE_DISK_SIZE"},
-		},
-		&cli.BoolFlag{
-			Name:    "gce-auto-implode",
-			Usage:   "Enable to make the instance power off after gce-auto-implode-time if it's still running",
-			EnvVars: []string{"CLOUDBRAIN_GCE_AUTO_IMPLODE"},
-		},
-		&cli.DurationFlag{
-			Name:    "gce-auto-implode-time",
-			Usage:   "How long to wait before auto-imploding. Will be rounded down to the nearest minute.",
-			EnvVars: []string{"CLOUDBRAIN_GCE_AUTO_IMPLODE_TIME"},
-		},
-		&cli.BoolFlag{
-			Name:    "gce-preemptible",
-			Usage:   "Enable to use GCE preemptible instances",
-			EnvVars: []string{"CLOUDBRAIN_GCE_PREEMPTIBLE"},
+	app := &cli.App{
+		Name:      "cloudbrain-insert-provider",
+		Version:   cloudbrain.VersionString,
+		Copyright: cloudbrain.CopyrightString,
+		Usage:     "Insert configuration for a provider into the database",
+		Action:    mainAction,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "database-url",
+				Usage:   "The URL for the PostgreSQL database to use",
+				EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
+			},
+			&cli.StringFlag{
+				Name:    "database-encryption-key",
+				Usage:   "The database encryption key, hex-encoded",
+				EnvVars: []string{"CLOUDBRAIN_DATABASE_ENCRYPTION_KEY"},
+			},
+			&cli.StringFlag{
+				Name:    "provider-name",
+				Usage:   "The name to assign to the provider being added",
+				EnvVars: []string{"CLOUDBRAIN_PROVIDER_NAME"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-account-json",
+				Usage:   "A path pointing to the GCE account JSON file",
+				EnvVars: []string{"CLOUDBRAIN_GCE_ACCOUNT_JSON"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-project-id",
+				Usage:   "The GCE project ID for the project to boot instances in",
+				EnvVars: []string{"CLOUDBRAIN_GCE_PROJECT_ID"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-image-project-id",
+				Usage:   "The GCE project ID for the project containing the build environment images",
+				EnvVars: []string{"CLOUDBRAIN_GCE_IMAGE_PROJECT_ID"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-zone",
+				Usage:   "The GCE zone to boot instances in",
+				Value:   "us-central1-a",
+				EnvVars: []string{"CLOUDBRAIN_GCE_ZONE"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-standard-machine-type",
+				Usage:   "The machine type to use for 'standard' instances",
+				Value:   "n1-standard-2",
+				EnvVars: []string{"CLOUDBRAIN_GCE_STANDARD_MACHINE_TYPE"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-premium-machine-type",
+				Usage:   "The machine type to use for 'premium' instances",
+				Value:   "n1-standard-4",
+				EnvVars: []string{"CLOUDBRAIN_GCE_PREMIUM_MACHINE_TYPE"},
+			},
+			&cli.StringFlag{
+				Name:    "gce-network",
+				Usage:   "The GCE network to connect instances to",
+				Value:   "default",
+				EnvVars: []string{"CLOUDBRAIN_GCE_NETWORK"},
+			},
+			&cli.IntFlag{
+				Name:    "gce-disk-size",
+				Usage:   "The GCE disk size in GiB",
+				Value:   30,
+				EnvVars: []string{"CLOUDBRAIN_GCE_DISK_SIZE"},
+			},
+			&cli.BoolFlag{
+				Name:    "gce-auto-implode",
+				Usage:   "Enable to make the instance power off after gce-auto-implode-time if it's still running",
+				EnvVars: []string{"CLOUDBRAIN_GCE_AUTO_IMPLODE"},
+			},
+			&cli.DurationFlag{
+				Name:    "gce-auto-implode-time",
+				Usage:   "How long to wait before auto-imploding. Will be rounded down to the nearest minute.",
+				EnvVars: []string{"CLOUDBRAIN_GCE_AUTO_IMPLODE_TIME"},
+			},
+			&cli.BoolFlag{
+				Name:    "gce-preemptible",
+				Usage:   "Enable to use GCE preemptible instances",
+				EnvVars: []string{"CLOUDBRAIN_GCE_PREEMPTIBLE"},
+			},
 		},
 	}
 
