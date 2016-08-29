@@ -17,7 +17,6 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/mitchellh/multistep"
-	"github.com/travis-ci/cloud-brain/cbcontext"
 	"golang.org/x/net/context"
 )
 
@@ -290,7 +289,6 @@ func (p *GCEProvider) Remove(id string) (Instance, error) {
 func (p *GCEProvider) stepDeleteInstance(c *gceStopContext) multistep.StepAction {
 	op, err := p.client.Instances.Delete(p.projectID, p.ic.Zone.Name, c.instance.Name).Do()
 	if err != nil {
-		cbcontext.LoggerFromContext(c.ctx).WithField("err", err).Error("error deleting instance")
 		c.errChan <- err
 		return multistep.ActionHalt
 	}

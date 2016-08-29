@@ -11,6 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pborman/uuid"
+	"github.com/pkg/errors"
 	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
@@ -113,12 +114,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		State:        "creating",
 	})
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"err":        err,
-			"provider":   providerName,
-			"image_name": attr.ImageName,
-		}).Error("error creating instance in database")
-		return nil, err
+		return nil, errors.Wrap(err, "error creating instance in database")
 	}
 
 	err = c.bb.Enqueue(background.Job{
@@ -129,12 +125,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		MaxRetries: MaxCreateRetries,
 	})
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"err":         err,
-			"instance_id": id,
-		}).Error("error enqueueing 'create' job in the background")
-		// TODO(henrikhodne): Delete the record in the database?
-		return nil, err
+		return nil, errors.Wrap(err, "error enqueueing 'create' job in the background")
 	}
 
 	return &Instance{
@@ -155,10 +146,7 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 
 	_, err = c.db.RemoveInstance(inst)
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"err": err,
-		}).Error("error deleting instance in database")
-		return nil, err
+		return nil, errors.Wrap(err, "error deleting instance in database")
 	}
 
 	err = c.bb.Enqueue(background.Job{
@@ -169,11 +157,7 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 		MaxRetries: MaxCreateRetries,
 	})
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"err":         err,
-			"instance_id": attr.InstanceID,
-		}).Error("error enqueueing 'create' job in the background")
-		return nil, err
+		return nil, errors.Wrap(err, "error enqueueing 'create' job in the background")
 	}
 
 	return &Instance{
@@ -195,21 +179,12 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 
 	dbInstance, err := c.db.GetInstance(id)
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"err":         err,
-			"instance_id": id,
-		}).Error("error fetching instance from DB")
-		return err
+		return errors.Wrap(err, "error fetching instance from DB")
 	}
 
 	cloudProvider, err := c.cloudProvider(dbInstance.ProviderName)
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"instance_id":   id,
-			"provider_name": dbInstance.ProviderName,
-			"err":           err,
-		}).Error("couldn't find provider with given name")
-		return err
+		return errors.Wrapf(err, "couldn't find provider with given name: %v", dbInstance.ProviderName)
 	}
 
 	instance, err := cloudProvider.Create(id, cloud.CreateAttributes{
@@ -241,12 +216,7 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 
 	err = c.db.UpdateInstance(dbInstance)
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
-			"err":         err,
-			"instance_id": id,
-			"provider_id": instance.ID,
-		}).Error("couldn't update instance in DB")
-		return err
+		return errors.Wrap(err, "couldn't update instance in DB")
 	}
 
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
