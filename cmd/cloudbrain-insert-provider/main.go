@@ -102,24 +102,24 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Printf("%v", err)
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
 }
 
 func mainAction(c *cli.Context) error {
 	if c.String("database-url") == "" {
-		return fmt.Errorf("error: the DATABASE_URL environment variable must be set\n")
+		return fmt.Errorf("error: the DATABASE_URL environment variable must be set")
 	}
 	pgdb, err := sql.Open("postgres", c.String("database-url"))
 	if err != nil {
-		return fmt.Errorf("error: could not connect to the database: %v\n", err)
+		return fmt.Errorf("error: could not connect to the database: %v", err)
 	}
 
 	var encryptionKey [32]byte
 	keySlice, err := hex.DecodeString(c.String("database-encryption-key"))
 	if err != nil {
-		return fmt.Errorf("error: couldn't decode the database encryption key: %v\n", err)
+		return fmt.Errorf("error: couldn't decode the database encryption key: %v", err)
 	}
 	copy(encryptionKey[:], keySlice[0:32])
 
@@ -127,7 +127,7 @@ func mainAction(c *cli.Context) error {
 
 	accountJSON, err := loadGoogleAccountJSON(c.String("gce-account-json"))
 	if err != nil {
-		return fmt.Errorf("error: couldn't load GCE account JSON file: %v\n", err)
+		return fmt.Errorf("error: couldn't load GCE account JSON file: %v", err)
 	}
 
 	providerConfig := cloud.GCEProviderConfiguration{
@@ -146,12 +146,12 @@ func mainAction(c *cli.Context) error {
 
 	jsonConfig, err := json.Marshal(providerConfig)
 	if err != nil {
-		return fmt.Errorf("error: couldn't JSON-encode provider configuration: %v\n", err)
+		return fmt.Errorf("error: couldn't JSON-encode provider configuration: %v", err)
 	}
 
 	providerName := c.String("provider-name")
 	if providerName == "" {
-		return fmt.Errorf("error: provider name can't be blank\n")
+		return fmt.Errorf("error: provider name can't be blank")
 	}
 
 	id, err := db.CreateProvider(database.Provider{
@@ -161,7 +161,7 @@ func mainAction(c *cli.Context) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("error: couldn't insert provider in database: %v\n", err)
+		return fmt.Errorf("error: couldn't insert provider in database: %v", err)
 	}
 
 	fmt.Printf("created provider %s with ID %s\n", providerName, id)
