@@ -14,6 +14,7 @@ import (
 // Backend is the interface that must be implemented by background worker
 // backends.
 type Backend interface {
+	WaitForConnection() error
 	Enqueue(job Job) error
 	FetchWork(queue string) (Job, error)
 	ScheduleAt(t time.Time, job Job) error

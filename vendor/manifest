@@ -58,6 +58,14 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/pkg/errors",
+			"repository": "https://github.com/pkg/errors",
+			"vcs": "git",
+			"revision": "17b591df37844cde689f4d5813e5cea0927d8dd2",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "golang.org/x/crypto/nacl/secretbox",
 			"repository": "https://go.googlesource.com/crypto",
 			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
