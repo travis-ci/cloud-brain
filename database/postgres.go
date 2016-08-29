@@ -3,6 +3,7 @@ package database
 import (
 	"crypto/rand"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"golang.org/x/crypto/nacl/secretbox"
@@ -214,6 +215,34 @@ func (db *PostgresDB) CreateProvider(provider Provider) (string, error) {
 	}
 
 	return provider.ID, nil
+}
+
+// GetProviderByName fetches a provider and decrypts the config
+func (db *PostgresDB) GetProviderByName(id string) (*Provider, error) {
+	provider := &Provider{}
+	var config []byte
+
+	err := db.db.QueryRow(
+		"SELECT id, name, type, config FROM cloudbrain.providers WHERE name = $1",
+		id,
+	).Scan(
+		&provider.ID,
+		&provider.Name,
+		&provider.Type,
+		&config,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	config, valid := db.decrypt(config)
+	if !valid {
+		return nil, errors.New("could not decrypt provider config")
+	}
+
+	provider.Config = config
+
+	return provider, nil
 }
 
 // decrypt is used to decrypt encrypted data using the encryption key
