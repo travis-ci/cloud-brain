@@ -125,6 +125,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		MaxRetries: MaxCreateRetries,
 	})
 	if err != nil {
+		// TODO(henrikhodne): Delete the record in the database?
 		return nil, errors.Wrap(err, "error enqueueing 'create' job in the background")
 	}
 
