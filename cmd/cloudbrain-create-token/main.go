@@ -29,17 +29,19 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Printf("%v", err)
+		os.Exit(1)
+	}
 }
 
 func mainAction(c *cli.Context) error {
 	if c.String("database-url") == "" {
-		fmt.Printf("error: the DATABASE_URL environment variable must be set\n")
 		return fmt.Errorf("error: the DATABASE_URL environment variable must be set\n")
 	}
 	pgdb, err := sql.Open("postgres", c.String("database-url"))
 	if err != nil {
-		fmt.Printf("error: could not connect to the database: %v\n", err)
 		return fmt.Errorf("error: could not connect to the database: %v\n", err)
 	}
 	db := database.NewPostgresDB([32]byte{}, pgdb)
@@ -48,24 +50,20 @@ func mainAction(c *cli.Context) error {
 	token := make([]byte, 16)
 	_, err = rand.Read(salt)
 	if err != nil {
-		fmt.Printf("error: could not generate a random salt: %v\n", err)
 		return fmt.Errorf("error: could not generate a random salt: %v\n", err)
 	}
 	_, err = rand.Read(token)
 	if err != nil {
-		fmt.Printf("error: could not generate a random token: %v\n", err)
 		return fmt.Errorf("error: could not generate a random token: %v\n", err)
 	}
 
 	hashed, err := scrypt.Key(token, salt, 16384, 8, 1, 32)
 	if err != nil {
-		fmt.Printf("error: could not scrypt: %v\n", err)
 		return fmt.Errorf("error: could not scrypt: %v\n", err)
 	}
 
 	tokenID, err := db.InsertToken(c.Args().Get(0), hashed, salt)
 	if err != nil {
-		fmt.Printf("error: couldn't insert the token into the database: %v\n", err)
 		return fmt.Errorf("error: couldn't insert the token into the database: %v\n", err)
 	}
 

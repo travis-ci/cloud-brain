@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -78,7 +79,11 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Printf("%v", err)
+		os.Exit(1)
+	}
 }
 
 func mainAction(c *cli.Context) error {
