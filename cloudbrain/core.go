@@ -142,7 +142,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes) error {
 	inst, err := c.db.GetInstance(attr.InstanceID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error fetching instance from DB")
 	}
 
 	_, err = c.db.RemoveInstance(inst)
@@ -158,7 +158,7 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 		MaxRetries: MaxCreateRetries,
 	})
 	if err != nil {
-		return errors.Wrap(err, "error enqueueing 'create' job in the background")
+		return errors.Wrap(err, "error enqueueing 'remove' job in the background")
 	}
 
 	return nil
