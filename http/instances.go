@@ -85,14 +85,30 @@ func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.Resp
 }
 
 func handleInstancesDelete(ctx context.Context, core *cloudbrain.Core, w http.ResponseWriter, r *http.Request) {
-	var req DeleteInstanceRequest
-	if err := parseRequest(ctx, r, &req); err != nil {
-		respondError(ctx, w, http.StatusBadRequest, err)
+	prefix := "/instances/"
+	if !strings.HasPrefix(r.URL.Path, prefix) {
+		respondError(ctx, w, http.StatusNotFound, errNoURLPrefix)
+		return
+	}
+	path := r.URL.Path[len(prefix):]
+	if path == "" {
+		respondError(ctx, w, http.StatusNotFound, errNoURLPath)
 		return
 	}
 
-	err := core.RemoveInstance(ctx, cloudbrain.DeleteInstanceAttributes{
-		InstanceID: req.InstanceID,
+	instance, err := core.GetInstance(ctx, path)
+	if err != nil {
+		cbcontext.CaptureError(ctx, err)
+		respondError(ctx, w, http.StatusInternalServerError, err)
+		return
+	}
+	if instance == nil {
+		respondError(ctx, w, http.StatusNotFound, errInstanceIsNil)
+		return
+	}
+
+	err = core.RemoveInstance(ctx, cloudbrain.DeleteInstanceAttributes{
+		InstanceID: instance.ID,
 	})
 	if err != nil {
 		cbcontext.CaptureError(ctx, err)
@@ -134,10 +150,4 @@ type CreateInstanceRequest struct {
 	Image        string `json:"image"`
 	InstanceType string `json:"instance_type"`
 	PublicSSHKey string `json:"public_ssh_key"`
-}
-
-// DeleteInstanceRequest contains the data in the request body for a delete
-// instance request.
-type DeleteInstanceRequest struct {
-	InstanceID string `json:"instance_id"`
 }
