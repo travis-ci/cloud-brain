@@ -34,13 +34,14 @@ func Handler(ctx context.Context, core *cloudbrain.Core, authTokens []string) ht
 func parseRequest(ctx context.Context, r *http.Request, out interface{}) error {
 	err := json.NewDecoder(r.Body).Decode(out)
 	if err != nil && err != io.EOF {
+		cbcontext.LoggerFromContext(ctx).WithField("err", err).Info("couldn't parse request")
 		return fmt.Errorf("Failed to parse JSON input: %s", err)
 	}
 	return err
 }
 
 func respondError(ctx context.Context, w http.ResponseWriter, status int, err error) {
-	cbcontext.LoggerFromContext(ctx).WithField("response", status).WithField("err", err)
+	cbcontext.LoggerFromContext(ctx).WithField("response", status).WithField("err", err).Info()
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -65,7 +66,7 @@ func respondOk(ctx context.Context, w http.ResponseWriter, body interface{}) {
 		json.NewEncoder(w).Encode(body)
 	}
 
-	cbcontext.LoggerFromContext(ctx).WithField("response", status)
+	cbcontext.LoggerFromContext(ctx).WithField("response", status).Info()
 }
 
 // An ErrorResponse is returned by the HTTP API when an error occurs.

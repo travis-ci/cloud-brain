@@ -38,6 +38,20 @@ func (db *MemoryDatabase) CreateInstance(instance Instance) (string, error) {
 	instance.ID = id
 	db.instances[id] = instance
 
+	//TODO(emdantrim): log this action
+	return id, nil
+}
+
+// RemoveInstance removes the instance from the database.
+func (db *MemoryDatabase) RemoveInstance(instance Instance) (string, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	id := uuid.New()
+	instance.ID = id
+	delete(db.instances, id)
+
+	//TODO(emdantrim): log this action
 	return id, nil
 }
 
@@ -53,6 +67,7 @@ func (db *MemoryDatabase) GetInstance(id string) (Instance, error) {
 		return Instance{}, ErrInstanceNotFound
 	}
 
+	//TODO(emdantrim): log this action
 	return instance, nil
 }
 
@@ -65,10 +80,12 @@ func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
 	_, ok := db.instances[instance.ID]
 	if !ok {
 		return ErrInstanceNotFound
+		//TODO(emdantrim): log this action
 	}
 
 	db.instances[instance.ID] = instance
 
+	//TODO(emdantrim): log this action
 	return nil
 }
 

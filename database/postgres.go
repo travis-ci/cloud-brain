@@ -3,6 +3,7 @@ package database
 import (
 	"crypto/rand"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"golang.org/x/crypto/nacl/secretbox"
@@ -46,6 +47,21 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 			String: instance.PublicSSHKey,
 			Valid:  instance.PublicSSHKey != "",
 		},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return instance.ID, nil
+}
+
+// RemoveInstance deletes the given instance from the database. If an
+// error occurs, the empty string and the error is returned.
+func (db *PostgresDB) RemoveInstance(instance Instance) (string, error) {
+
+	_, err := db.db.Exec(
+		"DELETE FROM cloudbrain.instances WHERE id = $1",
+		instance.ID,
 	)
 	if err != nil {
 		return "", err
@@ -132,6 +148,7 @@ func (db *PostgresDB) InsertToken(description string, hash, salt []byte) (uint64
 		hash,
 		salt,
 	).Scan(&id)
+	// TODO: how bout some dates?
 	if err != nil {
 		return 0, err
 	}
@@ -198,6 +215,34 @@ func (db *PostgresDB) CreateProvider(provider Provider) (string, error) {
 	}
 
 	return provider.ID, nil
+}
+
+// GetProviderByName fetches a provider and decrypts the config
+func (db *PostgresDB) GetProviderByName(id string) (*Provider, error) {
+	provider := &Provider{}
+	var config []byte
+
+	err := db.db.QueryRow(
+		"SELECT id, name, type, config FROM cloudbrain.providers WHERE name = $1",
+		id,
+	).Scan(
+		&provider.ID,
+		&provider.Name,
+		&provider.Type,
+		&config,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	config, valid := db.decrypt(config)
+	if !valid {
+		return nil, errors.New("could not decrypt provider config")
+	}
+
+	provider.Config = config
+
+	return provider, nil
 }
 
 // decrypt is used to decrypt encrypted data using the encryption key

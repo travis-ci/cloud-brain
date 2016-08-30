@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -8,6 +9,13 @@ import (
 
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
+)
+
+var (
+	errCouldntGetInstance = fmt.Errorf("couldn't get instance")
+	errNoURLPrefix        = fmt.Errorf("no url prefix")
+	errNoURLPath          = fmt.Errorf("no path in url")
+	errInstanceIsNil      = fmt.Errorf("instance is nil")
 )
 
 func handleInstances(ctx context.Context, core *cloudbrain.Core) http.Handler {
@@ -19,6 +27,8 @@ func handleInstances(ctx context.Context, core *cloudbrain.Core) http.Handler {
 			handleInstancesGet(ctx, core, w, r)
 		case "POST":
 			handleInstancesPost(ctx, core, w, r)
+		case "DELETE":
+			handleInstancesDelete(ctx, core, w, r)
 		default:
 			respondError(ctx, w, http.StatusMethodNotAllowed, nil)
 		}
@@ -29,23 +39,23 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 	// Determine the path...
 	prefix := "/instances/"
 	if !strings.HasPrefix(r.URL.Path, prefix) {
-		respondError(ctx, w, http.StatusNotFound, nil)
+		respondError(ctx, w, http.StatusNotFound, errNoURLPrefix)
 		return
 	}
 	path := r.URL.Path[len(prefix):]
 	if path == "" {
-		respondError(ctx, w, http.StatusNotFound, nil)
+		respondError(ctx, w, http.StatusNotFound, errNoURLPath)
 		return
 	}
 
 	instance, err := core.GetInstance(ctx, path)
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Error("couldn't get instance")
-		respondError(ctx, w, http.StatusInternalServerError, nil)
+		cbcontext.CaptureError(ctx, err)
+		respondError(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
 	if instance == nil {
-		respondError(ctx, w, http.StatusNotFound, nil)
+		respondError(ctx, w, http.StatusNotFound, errInstanceIsNil)
 		return
 	}
 
@@ -66,11 +76,47 @@ func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.Resp
 		PublicSSHKey: req.PublicSSHKey,
 	})
 	if err != nil {
+		cbcontext.CaptureError(ctx, err)
 		respondError(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
 
 	respondOk(ctx, w, instanceToResponse(instance))
+}
+
+func handleInstancesDelete(ctx context.Context, core *cloudbrain.Core, w http.ResponseWriter, r *http.Request) {
+	prefix := "/instances/"
+	if !strings.HasPrefix(r.URL.Path, prefix) {
+		respondError(ctx, w, http.StatusNotFound, errNoURLPrefix)
+		return
+	}
+	path := r.URL.Path[len(prefix):]
+	if path == "" {
+		respondError(ctx, w, http.StatusNotFound, errNoURLPath)
+		return
+	}
+
+	instance, err := core.GetInstance(ctx, path)
+	if err != nil {
+		cbcontext.CaptureError(ctx, err)
+		respondError(ctx, w, http.StatusInternalServerError, err)
+		return
+	}
+	if instance == nil {
+		respondError(ctx, w, http.StatusNotFound, errInstanceIsNil)
+		return
+	}
+
+	err = core.RemoveInstance(ctx, cloudbrain.DeleteInstanceAttributes{
+		InstanceID: instance.ID,
+	})
+	if err != nil {
+		cbcontext.CaptureError(ctx, err)
+		respondError(ctx, w, http.StatusInternalServerError, err)
+		return
+	}
+
+	respondOk(ctx, w, nil)
 }
 
 func instanceToResponse(instance *cloudbrain.Instance) *InstanceResponse {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -20,65 +21,70 @@ import (
 )
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "cloudbrain-http"
-	app.Version = cloudbrain.VersionString
-	app.Copyright = cloudbrain.CopyrightString
-	app.Usage = "Run the HTTP server part of Cloud Brain"
-	app.Action = mainAction
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "redis-url",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_URL", "REDIS_URL"},
-		},
-		&cli.IntFlag{
-			Name:    "redis-max-idle",
-			Value:   3,
-			Usage:   "The maximum number of idle Redis connections",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_IDLE"},
-		},
-		&cli.IntFlag{
-			Name:    "redis-max-active",
-			Value:   5,
-			Usage:   "The maximum number of active Redis connections",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_ACTIVE"},
-		},
-		&cli.DurationFlag{
-			Name:    "redis-idle-timeout",
-			Value:   3 * time.Minute,
-			EnvVars: []string{"CLOUDBRAIN_REDIS_IDLE_TIMEOUT"},
-		},
-		&cli.StringFlag{
-			Name:    "redis-worker-prefix",
-			Value:   "cloud-brain:worker",
-			Usage:   "The Redis key prefix to use for keys used by the background workers",
-			EnvVars: []string{"CLOUDBRAIN_REDIS_WORKER_PREFIX"},
-		},
-		&cli.StringFlag{
-			Name:    "database-url",
-			Usage:   "The URL for the PostgreSQL database to use",
-			EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
-		},
-		&cli.StringFlag{
-			Name:  "addr",
-			Usage: "host:port to listen to",
-			Value: func() string {
-				v := ":" + os.Getenv("PORT")
-				if v == ":" {
-					v = ":42191"
-				}
-				return v
-			}(),
-			EnvVars: []string{"CLOUDBRAIN_ADDR"},
-		},
-		&cli.StringSliceFlag{
-			Name:    "auth-token",
-			Usage:   "authentication token(s) to accept",
-			EnvVars: []string{"CLOUDBRAIN_AUTH_TOKEN"},
+	app := &cli.App{
+		Name:      "cloudbrain-http",
+		Version:   cloudbrain.VersionString,
+		Copyright: cloudbrain.CopyrightString,
+		Usage:     "Run the HTTP server part of Cloud Brain",
+		Action:    mainAction,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "redis-url",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_URL", "REDIS_URL"},
+			},
+			&cli.IntFlag{
+				Name:    "redis-max-idle",
+				Value:   3,
+				Usage:   "The maximum number of idle Redis connections",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_IDLE"},
+			},
+			&cli.IntFlag{
+				Name:    "redis-max-active",
+				Value:   5,
+				Usage:   "The maximum number of active Redis connections",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_MAX_ACTIVE"},
+			},
+			&cli.DurationFlag{
+				Name:    "redis-idle-timeout",
+				Value:   3 * time.Minute,
+				EnvVars: []string{"CLOUDBRAIN_REDIS_IDLE_TIMEOUT"},
+			},
+			&cli.StringFlag{
+				Name:    "redis-worker-prefix",
+				Value:   "cloud-brain:worker",
+				Usage:   "The Redis key prefix to use for keys used by the background workers",
+				EnvVars: []string{"CLOUDBRAIN_REDIS_WORKER_PREFIX"},
+			},
+			&cli.StringFlag{
+				Name:    "database-url",
+				Usage:   "The URL for the PostgreSQL database to use",
+				EnvVars: []string{"CLOUDBRAIN_DATABASE_URL", "DATABASE_URL"},
+			},
+			&cli.StringFlag{
+				Name:  "addr",
+				Usage: "host:port to listen to",
+				Value: func() string {
+					v := ":" + os.Getenv("PORT")
+					if v == ":" {
+						v = ":42191"
+					}
+					return v
+				}(),
+				EnvVars: []string{"CLOUDBRAIN_ADDR"},
+			},
+			&cli.StringSliceFlag{
+				Name:    "auth-token",
+				Usage:   "authentication token(s) to accept",
+				EnvVars: []string{"CLOUDBRAIN_AUTH_TOKEN"},
+			},
 		},
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		os.Exit(1)
+	}
 }
 
 func mainAction(c *cli.Context) error {

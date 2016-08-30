@@ -17,6 +17,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/mitchellh/multistep"
+	"golang.org/x/net/context"
 )
 
 var gceStartupScript = template.Must(template.New("gce-startup").Parse(`#!/usr/bin/env bash
@@ -51,6 +52,17 @@ type gceStartContext struct {
 	instanceInsertOp *compute.Operation
 }
 
+type gceStopContext struct {
+	id               string
+	instChan         chan Instance
+	errChan          chan error
+	terminateStart   time.Time
+	instanceConfig   gceInstanceConfig
+	instance         *compute.Instance
+	instanceDeleteOp *compute.Operation
+	ctx              context.Context
+}
+
 type gceInstanceConfig struct {
 	MachineType        *compute.MachineType
 	PremiumMachineType *compute.MachineType
@@ -61,6 +73,9 @@ type gceInstanceConfig struct {
 	HardTimeoutMinutes int64
 	AutoImplode        bool
 	Preemptible        bool
+	SkipStopPoll       bool
+	StopPrePollSleep   time.Duration
+	StopPollSleep      time.Duration
 }
 
 // GCEAccountJSON represents the JSON key file received from GCE when creating a
@@ -245,6 +260,43 @@ func (p *GCEProvider) Create(id string, attr CreateAttributes) (Instance, error)
 	}
 }
 
+// Remove stops the instance with the given ID and terminates it.
+func (p *GCEProvider) Remove(id string) (Instance, error) {
+	state := &multistep.BasicStateBag{}
+
+	c := &gceStopContext{
+		id:       id,
+		instChan: make(chan Instance),
+		errChan:  make(chan error),
+	}
+
+	runner := &multistep.BasicRunner{
+		Steps: []multistep.Step{
+			&gceStopMultistepWrapper{c: c, f: p.stepDeleteInstance},
+		},
+	}
+
+	go runner.Run(state)
+
+	select {
+	case inst := <-c.instChan:
+		return inst, nil
+	case err := <-c.errChan:
+		return Instance{}, err
+	}
+}
+
+func (p *GCEProvider) stepDeleteInstance(c *gceStopContext) multistep.StepAction {
+	op, err := p.client.Instances.Delete(p.projectID, p.ic.Zone.Name, c.instance.Name).Do()
+	if err != nil {
+		c.errChan <- err
+		return multistep.ActionHalt
+	}
+
+	c.instanceDeleteOp = op
+	return multistep.ActionContinue
+}
+
 func (p *GCEProvider) stepGetImage(c *gceStartContext) multistep.StepAction {
 	images, err := p.client.Images.List(p.imageProjectID).Filter(fmt.Sprintf("name eq ^%s", c.createAttrs.ImageName)).Do()
 	if err != nil {
@@ -348,7 +400,7 @@ func (p *GCEProvider) buildInstance(id string, createAttrs CreateAttributes, ima
 			&compute.NetworkInterface{
 				AccessConfigs: []*compute.AccessConfig{
 					&compute.AccessConfig{
-						Name: "AccessConfig brought to you by travis-worker",
+						Name: "AccessConfig brought to you by cloud-brain",
 						Type: "ONE_TO_ONE_NAT",
 					},
 				},
@@ -437,8 +489,19 @@ type gceStartMultistepWrapper struct {
 	c *gceStartContext
 }
 
+type gceStopMultistepWrapper struct {
+	f func(*gceStopContext) multistep.StepAction
+	c *gceStopContext
+}
+
 func (gismw *gceStartMultistepWrapper) Run(multistep.StateBag) multistep.StepAction {
 	return gismw.f(gismw.c)
 }
 
 func (gismw *gceStartMultistepWrapper) Cleanup(multistep.StateBag) { return }
+
+func (gismw *gceStopMultistepWrapper) Run(multistep.StateBag) multistep.StepAction {
+	return gismw.f(gismw.c)
+}
+
+func (gismw *gceStopMultistepWrapper) Cleanup(multistep.StateBag) { return }
