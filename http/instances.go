@@ -116,7 +116,7 @@ func handleInstancesDelete(ctx context.Context, core *cloudbrain.Core, w http.Re
 		return
 	}
 
-	respondOk(ctx, w, http.StatusOK)
+	respondOk(ctx, w, nil)
 }
 
 func instanceToResponse(instance *cloudbrain.Instance) *InstanceResponse {
