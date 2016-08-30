@@ -50,6 +50,7 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 
 	instance, err := core.GetInstance(ctx, path)
 	if err != nil {
+		cbcontext.CaptureError(ctx, err)
 		respondError(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
@@ -75,6 +76,7 @@ func handleInstancesPost(ctx context.Context, core *cloudbrain.Core, w http.Resp
 		PublicSSHKey: req.PublicSSHKey,
 	})
 	if err != nil {
+		cbcontext.CaptureError(ctx, err)
 		respondError(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
@@ -93,6 +95,7 @@ func handleInstancesDelete(ctx context.Context, core *cloudbrain.Core, w http.Re
 		InstanceID: req.InstanceID,
 	})
 	if err != nil {
+		cbcontext.CaptureError(ctx, err)
 		respondError(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
