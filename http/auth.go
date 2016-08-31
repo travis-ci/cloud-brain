@@ -16,13 +16,23 @@ type authWrapper struct {
 }
 
 func (aw *authWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	prefix := "token "
-	if !strings.HasPrefix(r.Header.Get("Authorization"), prefix) {
-		respondError(aw.ctx, w, http.StatusUnauthorized, errAuthorizationHeaderRequired)
-		return
+	actualToken := ""
+	if username, password, ok := r.BasicAuth(); ok {
+		if username == "token" {
+			actualToken = password
+		}
 	}
 
-	actualToken := r.Header.Get("Authorization")[len(prefix):]
+	if actualToken == "" {
+		prefix := "token "
+		if !strings.HasPrefix(r.Header.Get("Authorization"), prefix) {
+			respondError(aw.ctx, w, http.StatusUnauthorized, errAuthorizationHeaderRequired)
+			return
+		}
+
+		actualToken = r.Header.Get("Authorization")[len(prefix):]
+	}
+
 	components := strings.Split(actualToken, "-")
 	if len(components) != 2 {
 		respondError(aw.ctx, w, http.StatusUnauthorized, errNonNumericalTokenID)
