@@ -45,6 +45,7 @@ type Instance struct {
 	PublicSSHKey string
 	State        string
 	IPAddress    string
+	UpstreamID   string
 }
 
 // Provider contains the data stored about a cloud provider in the database.

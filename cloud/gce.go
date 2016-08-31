@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -188,7 +189,8 @@ func (p *GCEProvider) List() ([]Instance, error) {
 
 	for _, gceInstance := range instanceList.Items {
 		instance := Instance{
-			ID: strings.TrimPrefix(gceInstance.Name, "testing-gce-"),
+			ID:         strings.TrimPrefix(gceInstance.Name, "testing-gce-"),
+			UpstreamID: strconv.FormatUint(gceInstance.Id, 10),
 		}
 
 		for _, ni := range gceInstance.NetworkInterfaces {
@@ -353,8 +355,9 @@ func (p *GCEProvider) stepInsertInstance(c *gceStartContext) multistep.StepActio
 	c.instanceInsertOp = op
 
 	c.instChan <- Instance{
-		ID:    c.id,
-		State: InstanceStateStarting,
+		ID:         c.id,
+		State:      InstanceStateStarting,
+		UpstreamID: strconv.FormatUint(inst.Id, 10),
 	}
 	return multistep.ActionContinue
 }
@@ -439,7 +442,8 @@ func (p *GCEProvider) Get(id string) (Instance, error) {
 	}
 
 	instance := Instance{
-		ID: id,
+		ID:         id,
+		UpstreamID: strconv.FormatUint(gceInstance.Id, 10),
 	}
 
 	for _, ni := range gceInstance.NetworkInterfaces {

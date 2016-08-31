@@ -9,7 +9,8 @@ CREATE TABLE cloudbrain.instances (
 	image         TEXT  NOT NULL,
 	state         TEXT  NOT NULL,
 	ip_address    TEXT,
-	ssh_key       TEXT
+	ssh_key       TEXT,
+	upstream_id   TEXT
 );
 
 COMMIT;
