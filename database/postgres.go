@@ -34,7 +34,7 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 	instance.ID = uuid.New()
 
 	_, err := db.db.Exec(
-		"INSERT INTO cloudbrain.instances (id, provider_name, image, state, ip_address, ssh_key) VALUES ($1, $2, $3, $4, $5, $6)",
+		"INSERT INTO cloudbrain.instances (id, provider_name, image, state, ip_address, ssh_key, upstream_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 		instance.ID,
 		instance.ProviderName,
 		instance.Image,
@@ -46,6 +46,10 @@ func (db *PostgresDB) CreateInstance(instance Instance) (string, error) {
 		sql.NullString{
 			String: instance.PublicSSHKey,
 			Valid:  instance.PublicSSHKey != "",
+		},
+		sql.NullString{
+			String: instance.UpstreamID,
+			Valid:  instance.UpstreamID != "",
 		},
 	)
 	if err != nil {
@@ -75,9 +79,9 @@ func (db *PostgresDB) RemoveInstance(instance Instance) (string, error) {
 // error occurs, then an empty Instance struct and the error is returned.
 func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 	instance := Instance{ID: id}
-	var ipAddress, sshKey sql.NullString
+	var ipAddress, sshKey, upstreamID sql.NullString
 	err := db.db.QueryRow(
-		"SELECT provider_name, image, state, ip_address, ssh_key FROM cloudbrain.instances WHERE id = $1",
+		"SELECT provider_name, image, state, ip_address, ssh_key, upstream_id FROM cloudbrain.instances WHERE id = $1",
 		id,
 	).Scan(
 		&instance.ProviderName,
@@ -85,6 +89,7 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 		&instance.State,
 		&ipAddress,
 		&sshKey,
+		&upstreamID,
 	)
 	if err == sql.ErrNoRows {
 		return Instance{}, ErrInstanceNotFound
@@ -95,6 +100,7 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 
 	instance.IPAddress = ipAddress.String
 	instance.PublicSSHKey = sshKey.String
+	instance.UpstreamID = upstreamID.String
 
 	return instance, nil
 }
@@ -107,7 +113,7 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 // the given ID doesn't exist.
 func (db *PostgresDB) UpdateInstance(instance Instance) error {
 	_, err := db.db.Exec(
-		"UPDATE cloudbrain.instances SET provider_name = $1, image = $2, state = $3, ip_address = $4, ssh_key = $5 WHERE id = $6",
+		"UPDATE cloudbrain.instances SET provider_name = $1, image = $2, state = $3, ip_address = $4, ssh_key = $5, upstream_id = $6 WHERE id = $7",
 		instance.ProviderName,
 		instance.Image,
 		instance.State,
@@ -118,6 +124,10 @@ func (db *PostgresDB) UpdateInstance(instance Instance) error {
 		sql.NullString{
 			String: instance.PublicSSHKey,
 			Valid:  instance.PublicSSHKey != "",
+		},
+		sql.NullString{
+			String: instance.UpstreamID,
+			Valid:  instance.UpstreamID != "",
 		},
 		instance.ID,
 	)

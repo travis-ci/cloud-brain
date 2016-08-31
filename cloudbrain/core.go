@@ -88,6 +88,7 @@ func (c *Core) GetInstance(ctx context.Context, id string) (*Instance, error) {
 		Image:        instance.Image,
 		State:        instance.State,
 		IPAddress:    instance.IPAddress,
+		UpstreamID:   instance.UpstreamID,
 	}, nil
 }
 
@@ -201,6 +202,7 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 				"err":         err,
 				"instance_id": id,
 				"provider_id": instance.ID,
+				"upstream_id": instance.UpstreamID,
 			}).Error("couldn't update instance in DB")
 			return err
 		}
@@ -250,6 +252,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 			}
 
 			dbInstance.IPAddress = instance.IPAddress
+			dbInstance.UpstreamID = instance.UpstreamID
 			dbInstance.State = string(instance.State)
 
 			err = c.db.UpdateInstance(dbInstance)
@@ -353,4 +356,5 @@ type Instance struct {
 	Image        string
 	State        string
 	IPAddress    string
+	UpstreamID   string
 }
