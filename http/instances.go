@@ -129,6 +129,9 @@ func instanceToResponse(instance *cloudbrain.Instance) *InstanceResponse {
 	if instance.IPAddress != "" {
 		body.IPAddress = &instance.IPAddress
 	}
+	if instance.UpstreamID != "" {
+		body.UpstreamID = &instance.UpstreamID
+	}
 
 	return body
 }
@@ -140,6 +143,7 @@ type InstanceResponse struct {
 	ProviderName string  `json:"provider"`
 	Image        string  `json:"image"`
 	IPAddress    *string `json:"ip_address"`
+	UpstreamID   *string `json:"upstream_id"`
 	State        string  `json:"state"`
 }
 
