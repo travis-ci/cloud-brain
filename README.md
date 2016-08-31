@@ -120,3 +120,23 @@ Status: 200 OK
 	"state": "running"
 }
 ```
+
+## Usage (script)
+
+There is a nice client script that you can use to interact with the API. It uses [httpie](https://github.com/jkbrzt/httpie).
+
+Since httpie supports `~/.netrc` files for authentication, you can create such a file (if it does not already exist), and configure it with your cloud-brain token as follows:
+
+```
+machine travis-cloud-brain-staging.herokuapp.com
+  login token
+  password 0-your-very-secret-cloud-brain-token
+```
+
+Example:
+
+```bash
+$ script/cloud-brain-staging post instances provider=gce-staging image=travis-ci-amethyst-trusty-1470801111 instance_type=standard
+$ script/cloud-brain-staging get instances/6f6466f9-b99b-4b7f-b446-6d85ce4c8958
+$ script/cloud-brain-staging delete instances/6f6466f9-b99b-4b7f-b446-6d85ce4c8958
+```

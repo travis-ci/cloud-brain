@@ -1,0 +1,16 @@
+#!/bin/bash
+
+BASE_URL=http://travis-cloud-brain-staging.herokuapp.com
+case "$1" in
+  get|put|post|delete|options|head)
+    METHOD="$1"
+    shift
+    ;;
+  *)
+    METHOD=get
+    ;;
+esac
+REQUEST_PATH="$1"
+shift
+
+http "$METHOD" "$BASE_URL/$REQUEST_PATH" $@
