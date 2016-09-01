@@ -89,6 +89,7 @@ func (c *Core) GetInstance(ctx context.Context, id string) (*Instance, error) {
 		State:        instance.State,
 		IPAddress:    instance.IPAddress,
 		UpstreamID:   instance.UpstreamID,
+		ErrorReason:  instance.ErrorReason,
 	}, nil
 }
 
@@ -194,7 +195,9 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 			"err":         err,
 			"instance_id": id,
 		}).Error("error creating instance")
+
 		dbInstance.State = "errored"
+		dbInstance.ErrorReason = err.Error()
 
 		err = c.db.UpdateInstance(dbInstance)
 		if err != nil {
@@ -251,9 +254,10 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 				continue
 			}
 
+			dbInstance.State = string(instance.State)
 			dbInstance.IPAddress = instance.IPAddress
 			dbInstance.UpstreamID = instance.UpstreamID
-			dbInstance.State = string(instance.State)
+			dbInstance.ErrorReason = instance.ErrorReason
 
 			err = c.db.UpdateInstance(dbInstance)
 			if err != nil {
@@ -357,4 +361,5 @@ type Instance struct {
 	State        string
 	IPAddress    string
 	UpstreamID   string
+	ErrorReason  string
 }
