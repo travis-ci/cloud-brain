@@ -46,6 +46,7 @@ type Instance struct {
 	State        string
 	IPAddress    string
 	UpstreamID   string
+	ErrorReason  string
 }
 
 // Provider contains the data stored about a cloud provider in the database.

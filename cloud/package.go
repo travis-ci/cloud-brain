@@ -18,10 +18,11 @@ type Provider interface {
 
 // An Instance is a single compute instance
 type Instance struct {
-	ID         string
-	State      InstanceState
-	IPAddress  string
-	UpstreamID string
+	ID          string
+	State       InstanceState
+	IPAddress   string
+	UpstreamID  string
+	ErrorReason string
 }
 
 // CreateAttributes contains the attributes needed to start an instance.
