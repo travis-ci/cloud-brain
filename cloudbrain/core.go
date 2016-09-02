@@ -228,6 +228,42 @@ func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error 
 	return nil
 }
 
+// ProviderRemoveInstance is used to schedule the creation of the instance with
+// the given ID on the provider selected for that instance.
+func (c *Core) ProviderRemoveInstance(ctx context.Context, byteID []byte) error {
+	id := string(byteID)
+
+	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+		"instance_id": id,
+	}).Info("removing instance")
+
+	dbInstance, err := c.db.GetInstance(id)
+	if err != nil {
+		return errors.Wrap(err, "error fetching instance from DB")
+	}
+
+	cloudProvider, err := c.cloudProvider(dbInstance.ProviderName)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't find provider with given name: %v", dbInstance.ProviderName)
+	}
+
+	err = cloudProvider.Destroy(id)
+	if err != nil {
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+			"err":         err,
+			"instance_id": id,
+		}).Error("error removing instance")
+
+		return err
+	}
+
+	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+		"instance_id": id,
+	}).Info("removed instance")
+
+	return nil
+}
+
 // ProviderRefresh is used to synchronize the data on all the cloud providers
 // with the data in our database.
 func (c *Core) ProviderRefresh(ctx context.Context) error {
