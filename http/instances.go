@@ -107,6 +107,8 @@ func handleInstancesDelete(ctx context.Context, core *cloudbrain.Core, w http.Re
 		return
 	}
 
+	cbcontext.LoggerFromContext(ctx).Info("about to delete instance: %v", instance)
+
 	err = core.RemoveInstance(ctx, cloudbrain.DeleteInstanceAttributes{
 		InstanceID: instance.ID,
 	})
