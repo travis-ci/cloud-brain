@@ -4,173 +4,181 @@
 		{
 			"importpath": "github.com/Sirupsen/logrus",
 			"repository": "https://github.com/Sirupsen/logrus",
-			"vcs": "",
-			"revision": "219c8cb75c258c552e999735be6df753ffc7afdc",
+			"vcs": "git",
+			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/certifi/gocertifi",
+			"repository": "https://github.com/certifi/gocertifi",
+			"vcs": "git",
+			"revision": "ec89d50f00d39494f5b3ec5cf2fe75c53467a937",
+			"branch": "master",
+			"notests": true
 		},
 		{
 			"importpath": "github.com/garyburd/redigo/internal",
 			"repository": "https://github.com/garyburd/redigo",
-			"vcs": "",
-			"revision": "55d64223b60ff7c6a7f1c391f611038a88a86b01",
+			"vcs": "git",
+			"revision": "ffa8d46ada782d81cfda81a0fbd9f45ceae448e8",
 			"branch": "master",
 			"path": "/internal"
 		},
 		{
 			"importpath": "github.com/garyburd/redigo/redis",
 			"repository": "https://github.com/garyburd/redigo",
-			"vcs": "",
-			"revision": "55d64223b60ff7c6a7f1c391f611038a88a86b01",
+			"vcs": "git",
+			"revision": "ffa8d46ada782d81cfda81a0fbd9f45ceae448e8",
 			"branch": "master",
 			"path": "/redis"
 		},
 		{
 			"importpath": "github.com/getsentry/raven-go",
 			"repository": "https://github.com/getsentry/raven-go",
-			"vcs": "",
-			"revision": "1cc47a9463b90f246a0503d4c2e9a55c9459ced3",
+			"vcs": "git",
+			"revision": "379f8d0a68ca237cf8893a1cdfd4f574125e2c51",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/hashicorp/errwrap",
 			"repository": "https://github.com/hashicorp/errwrap",
-			"vcs": "",
+			"vcs": "git",
 			"revision": "7554cd9344cec97297fa6649b055a8c98c2a1e55",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/hashicorp/go-multierror",
 			"repository": "https://github.com/hashicorp/go-multierror",
-			"vcs": "",
-			"revision": "d30f09973e19c1dfcd120b2d9c4f168e68d6b5d5",
+			"vcs": "git",
+			"revision": "8c5f0ad9360406a3807ce7de6bc73269a91a6e51",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/lib/pq",
 			"repository": "https://github.com/lib/pq",
-			"vcs": "",
-			"revision": "165a3529e799da61ab10faed1fabff3662d6193f",
+			"vcs": "git",
+			"revision": "50761b0867bd1d9d069276790bcd4a3bccf2324a",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/mitchellh/multistep",
 			"repository": "https://github.com/mitchellh/multistep",
-			"vcs": "",
+			"vcs": "git",
 			"revision": "162146fc57112954184d90266f4733e900ed05a5",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/pborman/uuid",
 			"repository": "https://github.com/pborman/uuid",
-			"vcs": "",
-			"revision": "c55201b036063326c5b1b89ccfe45a184973d073",
+			"vcs": "git",
+			"revision": "b984ec7fa9ff9e428bd0cf0abf429384dfbe3e37",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/pkg/errors",
 			"repository": "https://github.com/pkg/errors",
 			"vcs": "git",
-			"revision": "17b591df37844cde689f4d5813e5cea0927d8dd2",
+			"revision": "a887431f7f6ef7687b556dbf718d9f351d4858a0",
 			"branch": "master",
 			"notests": true
 		},
 		{
 			"importpath": "golang.org/x/crypto/nacl/secretbox",
 			"repository": "https://go.googlesource.com/crypto",
-			"vcs": "",
-			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"vcs": "git",
+			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"branch": "master",
 			"path": "/nacl/secretbox"
 		},
 		{
 			"importpath": "golang.org/x/crypto/pbkdf2",
 			"repository": "https://go.googlesource.com/crypto",
-			"vcs": "",
-			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"vcs": "git",
+			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"branch": "master",
 			"path": "/pbkdf2"
 		},
 		{
 			"importpath": "golang.org/x/crypto/poly1305",
 			"repository": "https://go.googlesource.com/crypto",
-			"vcs": "",
-			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"vcs": "git",
+			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"branch": "master",
 			"path": "/poly1305"
 		},
 		{
 			"importpath": "golang.org/x/crypto/salsa20/salsa",
 			"repository": "https://go.googlesource.com/crypto",
-			"vcs": "",
-			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"vcs": "git",
+			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"branch": "master",
 			"path": "/salsa20/salsa"
 		},
 		{
 			"importpath": "golang.org/x/crypto/scrypt",
 			"repository": "https://go.googlesource.com/crypto",
-			"vcs": "",
-			"revision": "de93d05161db39bcbd84d3da2e54c4a18f37f0b1",
+			"vcs": "git",
+			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"branch": "master",
 			"path": "/scrypt"
 		},
 		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
-			"vcs": "",
-			"revision": "6acef71eb69611914f7a30939ea9f6e194c78172",
+			"vcs": "git",
+			"revision": "71a035914f99bb58fe82eac0f1289f10963d876c",
 			"branch": "master",
 			"path": "/context"
 		},
 		{
 			"importpath": "golang.org/x/oauth2",
 			"repository": "https://go.googlesource.com/oauth2",
-			"vcs": "",
-			"revision": "2cd4472c321b6cba78e029d99f0e7fe51032fd21",
+			"vcs": "git",
+			"revision": "3c3a985cb79f52a3190fbc056984415ca6763d01",
 			"branch": "master"
 		},
 		{
 			"importpath": "google.golang.org/api/compute/v1",
 			"repository": "https://code.googlesource.com/google-api-go-client",
-			"vcs": "",
-			"revision": "286e8c9bcb5f84d8dcac21634d79ab16428b1b78",
+			"vcs": "git",
+			"revision": "a69f0f19d246419bb931b0ac8f4f8d3f3e6d4feb",
 			"branch": "master",
 			"path": "/compute/v1"
 		},
 		{
 			"importpath": "google.golang.org/api/gensupport",
 			"repository": "https://code.googlesource.com/google-api-go-client",
-			"vcs": "",
-			"revision": "286e8c9bcb5f84d8dcac21634d79ab16428b1b78",
+			"vcs": "git",
+			"revision": "a69f0f19d246419bb931b0ac8f4f8d3f3e6d4feb",
 			"branch": "master",
 			"path": "/gensupport"
 		},
 		{
 			"importpath": "google.golang.org/api/googleapi",
 			"repository": "https://code.googlesource.com/google-api-go-client",
-			"vcs": "",
-			"revision": "286e8c9bcb5f84d8dcac21634d79ab16428b1b78",
+			"vcs": "git",
+			"revision": "a69f0f19d246419bb931b0ac8f4f8d3f3e6d4feb",
 			"branch": "master",
 			"path": "/googleapi"
 		},
 		{
 			"importpath": "gopkg.in/airbrake/gobrake.v2",
 			"repository": "https://gopkg.in/airbrake/gobrake.v2",
-			"vcs": "",
-			"revision": "c9d51adc624b5cc4c1bf8de730a09af4878ffe2d",
+			"vcs": "git",
+			"revision": "5d77bd50d083834501349f8be70197b26963674d",
 			"branch": "master"
 		},
 		{
 			"importpath": "gopkg.in/check.v1",
 			"repository": "https://gopkg.in/check.v1",
-			"vcs": "",
+			"vcs": "git",
 			"revision": "4f90aeace3a26ad7021961c297b22c42160c7b25",
 			"branch": "v1"
 		},
 		{
 			"importpath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
 			"repository": "https://gopkg.in/gemnasium/logrus-airbrake-hook.v2",
-			"vcs": "",
+			"vcs": "git",
 			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
 			"branch": "master"
 		},
@@ -178,14 +186,14 @@
 			"importpath": "gopkg.in/urfave/cli.v2",
 			"repository": "https://gopkg.in/urfave/cli.v2",
 			"vcs": "git",
-			"revision": "2616eeb540ed8006d0a5228a68fe571ba5d5862b",
+			"revision": "c72728f42438425ffcd487986936357e17ebba3f",
 			"branch": "v2"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",
 			"repository": "https://gopkg.in/yaml.v2",
-			"vcs": "",
-			"revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
+			"vcs": "git",
+			"revision": "31c299268d302dd0aa9a0dcf765a3d58971ac83f",
 			"branch": "v2"
 		}
 	]
