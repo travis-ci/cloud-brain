@@ -284,6 +284,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 			dbInstance, err := c.db.GetInstance(instance.ID)
 			if err != nil {
 				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+					"err":           err,
 					"provider_name": providerName,
 					"provider_id":   instance.ID,
 				}).Error("failed fetching instance from database")
@@ -298,6 +299,7 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 			err = c.db.UpdateInstance(dbInstance)
 			if err != nil {
 				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+					"err":         err,
 					"provider":    providerName,
 					"provider_id": instance.ID,
 					"db_id":       dbInstance.ID,
