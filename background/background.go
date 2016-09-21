@@ -72,9 +72,16 @@ func Run(ctx context.Context, queue string, backend Backend, worker Worker) erro
 			job.RetryCount++
 
 			if job.RetryCount <= job.MaxRetries {
-				// TODO(henrikhodne): These numbers probably need to be tweaked.
 				delay := time.Duration(job.RetryCount) * 5 * time.Second
 				backend.ScheduleAt(time.Now().Add(delay), job)
+
+				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+					"err":       err,
+					"id":        job.UUID,
+					"retries":   job.RetryCount,
+					"failed_at": job.FailedAt,
+					"queue":     job.Queue,
+				}).Infof("job failed, requeueing to retry in %v", delay)
 			} else {
 				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 					"err":       err,
