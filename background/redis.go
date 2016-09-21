@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -204,7 +205,9 @@ func (rb *RedisBackend) enqueueJobs(now time.Time) {
 	for {
 		payloads, err := redis.ByteSlices(conn.Do("ZRANGEBYSCORE", rb.key("schedule"), "-inf", nowStr, "LIMIT", "0", "1"))
 		if err != nil {
-			// TODO(henrikhodne): Log error?
+			logrus.WithFields(logrus.Fields{
+				"err": err,
+			}).Error("enqueueJobs failed to run redis ZRANGEBYSCORE")
 			continue
 		}
 
@@ -216,7 +219,10 @@ func (rb *RedisBackend) enqueueJobs(now time.Time) {
 
 		removed, err := redis.Int64(conn.Do("ZREM", rb.key("schedule"), payload))
 		if err != nil {
-			// TODO(henrikhodne): Log error?
+			logrus.WithFields(logrus.Fields{
+				"err":     err,
+				"payload": payload,
+			}).Error("enqueueJobs failed to run redis ZREM")
 			continue
 		}
 
@@ -231,13 +237,19 @@ func (rb *RedisBackend) enqueueJobs(now time.Time) {
 		var rj redisJob
 		err = gob.NewDecoder(payloadReader).Decode(&rj)
 		if err != nil {
-			// TODO(henrikhodne): Log error?
+			logrus.WithFields(logrus.Fields{
+				"err":     err,
+				"payload": payload,
+			}).Error("enqueueJobs failed to decode job payload")
 			continue
 		}
 
 		err = rb.Enqueue(rb.redisJobToJob(rj))
 		if err != nil {
-			// TODO(henrikhodne): Log error?
+			logrus.WithFields(logrus.Fields{
+				"err":     err,
+				"payload": payload,
+			}).Error("enqueueJobs failed to enqueue job to redis")
 			continue
 		}
 	}
