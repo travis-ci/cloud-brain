@@ -55,10 +55,7 @@ func respondError(ctx context.Context, w http.ResponseWriter, status int, err er
 }
 
 func respondOk(ctx context.Context, w http.ResponseWriter, body interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-
 	var status int
-
 	if body == nil {
 		status = http.StatusNoContent
 	} else {
