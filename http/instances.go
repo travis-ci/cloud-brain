@@ -59,6 +59,11 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 		return
 	}
 
+	if instance.State == "terminated" {
+		respondStatus(ctx, w, http.StatusGone, instanceToResponse(instance))
+		return
+	}
+
 	respondOk(ctx, w, instanceToResponse(instance))
 }
 
