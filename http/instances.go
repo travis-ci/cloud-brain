@@ -12,10 +12,12 @@ import (
 )
 
 var (
-	errCouldntGetInstance = fmt.Errorf("couldn't get instance")
-	errNoURLPrefix        = fmt.Errorf("no url prefix")
-	errNoURLPath          = fmt.Errorf("no path in url")
-	errInstanceIsNil      = fmt.Errorf("instance is nil")
+	errCouldntGetInstance      = fmt.Errorf("couldn't get instance")
+	errNoURLPrefix             = fmt.Errorf("no url prefix")
+	errNoURLPath               = fmt.Errorf("no path in url")
+	errInstanceIsNil           = fmt.Errorf("instance is nil")
+	errInstanceStateIsDeleting = fmt.Errorf("instance state is deleting")
+	errInstanceStateIsDeleted  = fmt.Errorf("instance state is deleted")
 )
 
 func handleInstances(ctx context.Context, core *cloudbrain.Core) http.Handler {
@@ -58,8 +60,12 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 		respondError(ctx, w, http.StatusNotFound, errInstanceIsNil)
 		return
 	}
+	if instance.State == "deleting" {
+		respondError(ctx, w, http.StatusGone, errInstanceStateIsDeleting)
+		return
+	}
 	if instance.State == "deleted" {
-		respondError(ctx, w, http.StatusGone, errInstanceIsNil)
+		respondError(ctx, w, http.StatusGone, errInstanceStateIsDeleted)
 		return
 	}
 

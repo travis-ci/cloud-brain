@@ -147,14 +147,17 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 		return errors.Wrap(err, "error fetching instance from DB")
 	}
 
+	if inst.State == "deleting" {
+		return errors.Wrap(err, "instance is already deleting")
+	}
 	if inst.State == "deleted" {
 		return errors.Wrap(err, "instance is already deleted")
 	}
 
-	inst.State = "deleted"
+	inst.State = "deleting"
 	err = c.db.UpdateInstance(inst)
 	if err != nil {
-		return errors.Wrap(err, "error marking instance as deleted in database")
+		return errors.Wrap(err, "error marking instance as deleting in database")
 	}
 
 	err = c.bb.Enqueue(background.Job{
@@ -247,6 +250,10 @@ func (c *Core) ProviderRemoveInstance(ctx context.Context, byteID []byte) error 
 		return errors.Wrap(err, "error fetching instance from DB")
 	}
 
+	if dbInstance.State != "deleting" {
+		return errors.Wrapf(err, "instance is not in deleting state, cannot proceed to delete; state was: %s", dbInstance.State)
+	}
+
 	cloudProvider, err := c.cloudProvider(dbInstance.ProviderName)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't find provider with given name: %v", dbInstance.ProviderName)
@@ -260,6 +267,12 @@ func (c *Core) ProviderRemoveInstance(ctx context.Context, byteID []byte) error 
 		}).Error("error removing instance")
 
 		return err
+	}
+
+	dbInstance.State = "deleted"
+	err = c.db.UpdateInstance(dbInstance)
+	if err != nil {
+		return errors.Wrap(err, "error marking instance as deleted in database")
 	}
 
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
