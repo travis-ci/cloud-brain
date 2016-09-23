@@ -147,9 +147,14 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 		return errors.Wrap(err, "error fetching instance from DB")
 	}
 
-	_, err = c.db.RemoveInstance(inst)
+	if inst.State == "deleted" {
+		return errors.Wrap(err, "instance is already deleted")
+	}
+
+	inst.State = "deleted"
+	err = c.db.UpdateInstance(inst)
 	if err != nil {
-		return errors.Wrap(err, "error deleting instance in database")
+		return errors.Wrap(err, "error marking instance as deleted in database")
 	}
 
 	err = c.bb.Enqueue(background.Job{

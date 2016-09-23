@@ -58,6 +58,10 @@ func handleInstancesGet(ctx context.Context, core *cloudbrain.Core, w http.Respo
 		respondError(ctx, w, http.StatusNotFound, errInstanceIsNil)
 		return
 	}
+	if instance.State == "deleted" {
+		respondError(ctx, w, http.StatusGone, errInstanceIsNil)
+		return
+	}
 
 	respondOk(ctx, w, instanceToResponse(instance))
 }
