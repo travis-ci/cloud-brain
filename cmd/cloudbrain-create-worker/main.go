@@ -11,8 +11,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	"github.com/gocraft/work"
 	_ "github.com/lib/pq"
-	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
@@ -95,12 +95,6 @@ func mainAction(c *cli.Context) error {
 		},
 	}
 
-	backgroundBackend := background.NewRedisBackend(redisPool, c.String("redis-worker-prefix"))
-	err := backgroundBackend.WaitForConnection()
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("background backend creation failed")
-	}
-
 	if c.String("database-url") == "" {
 		cbcontext.LoggerFromContext(ctx).Fatal("database-url flag is required")
 	}
@@ -118,11 +112,12 @@ func mainAction(c *cli.Context) error {
 
 	db := database.NewPostgresDB(encryptionKey, pgdb)
 
-	core := cloudbrain.NewCore(db, backgroundBackend)
+	redisWorkerPrefix := c.String("redis-worker-prefix")
+	core := cloudbrain.NewCore(db, redisPool, redisWorkerPrefix)
 
-	err = background.Run(ctx, "create", backgroundBackend, background.WorkerFunc(core.ProviderCreateInstance))
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("create worker crashed")
-	}
+	workerPool := work.NewWorkerPool(struct{}{}, 10, redisWorkerPrefix, redisPool)
+	workerPool.JobWithOptions("create", work.JobOptions{MaxFails: 10}, core.ProviderCreateInstance)
+	workerPool.Start()
+
 	return nil
 }

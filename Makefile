@@ -1,5 +1,4 @@
 PACKAGES := \
-	github.com/travis-ci/cloud-brain/background \
 	github.com/travis-ci/cloud-brain/cbcontext \
 	github.com/travis-ci/cloud-brain/cloud \
 	github.com/travis-ci/cloud-brain/cloudbrain \

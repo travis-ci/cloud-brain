@@ -9,10 +9,10 @@ import (
 	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/garyburd/redigo/redis"
+	"github.com/gocraft/work"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
@@ -53,8 +53,9 @@ const MaxCreateRetries = 10
 // API and the background workers are just frontends for the Core, and calls
 // methods on Core for functionality.
 type Core struct {
-	db database.DB
-	bb background.Backend
+	db                database.DB
+	redisPool         *redis.Pool
+	redisWorkerPrefix string
 
 	cloudProvidersMutex sync.Mutex
 	cloudProviders      map[string]cloud.Provider
@@ -62,10 +63,11 @@ type Core struct {
 
 // NewCore is used to create a new Core backed by the given database and
 // background Backend.
-func NewCore(db database.DB, bb background.Backend) *Core {
+func NewCore(db database.DB, redisPool *redis.Pool, redisWorkerPrefix string) *Core {
 	return &Core{
-		db: db,
-		bb: bb,
+		db:                db,
+		redisPool:         redisPool,
+		redisWorkerPrefix: redisWorkerPrefix,
 	}
 }
 
@@ -119,12 +121,11 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		return nil, errors.Wrap(err, "error creating instance in database")
 	}
 
-	err = c.bb.Enqueue(background.Job{
-		UUID:       uuid.New(),
-		Context:    ctx,
-		Payload:    []byte(id),
-		Queue:      "create",
-		MaxRetries: MaxCreateRetries,
+	var enqueuer = work.NewEnqueuer(c.redisWorkerPrefix, c.redisPool)
+
+	_, err = enqueuer.Enqueue("create", work.Q{
+		"context": ctx,
+		"payload": []byte(id),
 	})
 	if err != nil {
 		// TODO(henrikhodne): Delete the record in the database?
@@ -151,13 +152,13 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 		return errors.Wrapf(err, "not removing instance, state is already %s", inst.State)
 	}
 
-	err = c.bb.Enqueue(background.Job{
-		UUID:       uuid.New(),
-		Context:    ctx,
-		Payload:    []byte(attr.InstanceID),
-		Queue:      "remove",
-		MaxRetries: MaxCreateRetries,
+	var enqueuer = work.NewEnqueuer(c.redisWorkerPrefix, c.redisPool)
+
+	_, err = enqueuer.Enqueue("remove", work.Q{
+		"context": ctx,
+		"payload": []byte(attr.InstanceID),
 	})
+
 	if err != nil {
 		return errors.Wrap(err, "error enqueueing 'remove' job in the background")
 	}
