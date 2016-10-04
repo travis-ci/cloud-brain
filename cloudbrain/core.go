@@ -257,7 +257,7 @@ func (c *Core) ProviderRemoveInstance(ctx context.Context, byteID []byte) error 
 	}
 
 	dbInstance.State = "terminating"
-	err = db.UpdateInstance(dbInstance)
+	err = c.db.UpdateInstance(dbInstance)
 	if err != nil {
 		return errors.Wrap(err, "error updating instance state to terminating in DB")
 	}
