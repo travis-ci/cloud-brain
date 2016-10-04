@@ -115,7 +115,7 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 func (db *PostgresDB) GetInstancesByState(state string) ([]Instance, error) {
 	var instances []Instance
 
-	rows, err := db.db.Query("SELECT provider_name, image, state, ip_address, ssh_key, upstream_id, error_reason FROM cloudbrain.instances WHERE state = $1", state)
+	rows, err := db.db.Query("SELECT id, provider_name, image, state, ip_address, ssh_key, upstream_id, error_reason FROM cloudbrain.instances WHERE state = $1", state)
 	if err != nil {
 		return instances, err
 	}
@@ -123,6 +123,7 @@ func (db *PostgresDB) GetInstancesByState(state string) ([]Instance, error) {
 		instance := &Instance{}
 		var ipAddress, sshKey, upstreamID, errorReason sql.NullString
 		err := rows.Scan(
+			&instance.ID,
 			&instance.ProviderName,
 			&instance.Image,
 			&instance.State,
