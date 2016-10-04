@@ -7,6 +7,8 @@ PACKAGES := \
 	github.com/travis-ci/cloud-brain/cmd/cloudbrain-create-worker \
 	github.com/travis-ci/cloud-brain/cmd/cloudbrain-http \
 	github.com/travis-ci/cloud-brain/cmd/cloudbrain-refresh-worker \
+	github.com/travis-ci/cloud-brain/cmd/cloudbrain-remove-worker \
+	github.com/travis-ci/cloud-brain/cmd/cloudbrain-show-provider \
 	github.com/travis-ci/cloud-brain/database \
 	github.com/travis-ci/cloud-brain/http
 
