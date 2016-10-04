@@ -42,6 +42,7 @@ func parseRequest(ctx context.Context, r *http.Request, out interface{}) error {
 
 func respondError(ctx context.Context, w http.ResponseWriter, status int, err error) {
 	cbcontext.LoggerFromContext(ctx).WithField("response", status).WithField("err", err).Info()
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -54,15 +55,21 @@ func respondError(ctx context.Context, w http.ResponseWriter, status int, err er
 }
 
 func respondOk(ctx context.Context, w http.ResponseWriter, body interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-
-	status := http.StatusNoContent
-
+	var status int
 	if body == nil {
-		w.WriteHeader(status)
+		status = http.StatusNoContent
 	} else {
 		status = http.StatusOK
-		w.WriteHeader(status)
+	}
+
+	respondStatus(ctx, w, status, body)
+}
+
+func respondStatus(ctx context.Context, w http.ResponseWriter, status int, body interface{}) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	if body != nil {
 		json.NewEncoder(w).Encode(body)
 	}
 

@@ -18,6 +18,9 @@ type DB interface {
 	// Retrieves the instance by its ID, or returns an error
 	GetInstance(id string) (Instance, error)
 
+	// Retrieves all instances by State
+	GetInstancesByState(state string) ([]Instance, error)
+
 	// Updates the instance with the given ID
 	UpdateInstance(instance Instance) error
 
