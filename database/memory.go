@@ -71,6 +71,21 @@ func (db *MemoryDatabase) GetInstance(id string) (Instance, error) {
 	return instance, nil
 }
 
+// GetInstancesByState returns a slice of instances for a given state
+func (db *MemoryDatabase) GetInstancesByState(state string) ([]Instance, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	var instances []Instance
+	for _, instance := range db.instances {
+		if instance.State == state {
+			instances = append(instances, instance)
+		}
+	}
+
+	return instances, nil
+}
+
 // UpdateInstance updates the instance with the given ID, or returns
 // ErrInstanceNotFound if no instance with that ID exists.
 func (db *MemoryDatabase) UpdateInstance(instance Instance) error {

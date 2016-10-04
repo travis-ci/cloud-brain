@@ -111,6 +111,47 @@ func (db *PostgresDB) GetInstance(id string) (Instance, error) {
 	return instance, nil
 }
 
+// GetInstancesByState returns a slice of instances for a given state
+func (db *PostgresDB) GetInstancesByState(state string) ([]Instance, error) {
+	var instances []Instance
+
+	rows, err := db.db.Query("SELECT provider_name, image, state, ip_address, ssh_key, upstream_id, error_reason FROM cloudbrain.instances WHERE state = $1", state)
+	if err != nil {
+		return instances, err
+	}
+	for rows.Next() {
+		instance := &Instance{}
+		var ipAddress, sshKey, upstreamID, errorReason sql.NullString
+		err := rows.Scan(
+			&instance.ProviderName,
+			&instance.Image,
+			&instance.State,
+			&ipAddress,
+			&sshKey,
+			&upstreamID,
+			&errorReason,
+		)
+		if err == sql.ErrNoRows {
+			return instances, ErrInstanceNotFound
+		}
+		if err != nil {
+			return instances, err
+		}
+
+		instance.IPAddress = ipAddress.String
+		instance.PublicSSHKey = sshKey.String
+		instance.UpstreamID = upstreamID.String
+		instance.ErrorReason = errorReason.String
+
+		instances = append(instances, *instance)
+	}
+	if err := rows.Err(); err != nil {
+		return instances, err
+	}
+
+	return instances, nil
+}
+
 // UpdateInstance updates the instane with the given ID in the database to match
 // the given attributes. Returns ErrInstanceNotFound if an instance with the
 // given ID isn't found.

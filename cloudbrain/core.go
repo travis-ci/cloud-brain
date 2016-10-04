@@ -256,6 +256,12 @@ func (c *Core) ProviderRemoveInstance(ctx context.Context, byteID []byte) error 
 		return err
 	}
 
+	dbInstance.State = "terminating"
+	err = db.UpdateInstance(dbInstance)
+	if err != nil {
+		return errors.Wrap(err, "error updating instance state to terminating in DB")
+	}
+
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 		"instance_id": id,
 	}).Info("removed instance")
@@ -279,7 +285,11 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 			continue
 		}
 
+		seenIds := make(map[string]bool)
+
 		for _, instance := range instances {
+			seenIds[instance.ID] = true
+
 			dbInstance, err := c.db.GetInstance(instance.ID)
 			if err != nil {
 				cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
@@ -303,6 +313,34 @@ func (c *Core) ProviderRefresh(ctx context.Context) error {
 					"provider_id": instance.ID,
 					"db_id":       dbInstance.ID,
 				}).Error("failed to update instance in database")
+			}
+		}
+
+		terminatingDbInstances, err := c.db.GetInstancesByState("terminating")
+		if err != nil {
+			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+				"err":      err,
+				"provider": providerName,
+			}).Error("failed to fetch list of terminating instances")
+			continue
+		}
+
+		// find instances that were in terminating state
+		// if the id is no longer in seenIds, it was deleted
+		// from GCE, we can now consider it terminated
+		for _, dbInstance := range terminatingDbInstances {
+			_, found := seenIds[dbInstance.ID]
+			if !found {
+				dbInstance.State = "terminated"
+
+				err = c.db.UpdateInstance(dbInstance)
+				if err != nil {
+					cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
+						"err":      err,
+						"provider": providerName,
+						"db_id":    dbInstance.ID,
+					}).Error("failed to update instance in database")
+				}
 			}
 		}
 

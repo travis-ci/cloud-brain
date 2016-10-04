@@ -177,7 +177,7 @@ func NewGCEProvider(conf GCEProviderConfiguration) (*GCEProvider, error) {
 	}, nil
 }
 
-// List returns a list of all instances on Google Compute Engine that was\
+// List returns a list of all instances on Google Compute Engine that were
 // created by Cloud Brain.
 func (p *GCEProvider) List() ([]Instance, error) {
 	instanceList, err := p.client.Instances.List(p.projectID, p.ic.Zone.Name).Filter("name eq ^testing-gce-.+").Do()
