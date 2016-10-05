@@ -119,7 +119,7 @@ func mainAction(c *cli.Context) error {
 
 	log.Print("starting worker pool")
 
-	workerPool := work.NewWorkerPool(struct{}{}, 10, redisWorkerPrefix, redisPool)
+	workerPool := work.NewWorkerPool(struct{}{}, 1, redisWorkerPrefix, redisPool)
 	workerPool.JobWithOptions("remove", work.JobOptions{MaxFails: 10}, core.ProviderRemoveInstance)
 	workerPool.Start()
 
