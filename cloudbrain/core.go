@@ -168,7 +168,10 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 
 // ProviderCreateInstance is used to schedule the creation of the instance with
 // the given ID on the provider selected for that instance.
-func (c *Core) ProviderCreateInstance(ctx context.Context, byteID []byte) error {
+func (c *Core) ProviderCreateInstance(job *work.Job) error {
+	ctx := job.Args["context"].(context.Context)
+	byteID := job.Args["payload"].([]byte)
+
 	id := string(byteID)
 
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
