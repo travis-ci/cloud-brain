@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"os"
+	"os/signal"
 	"time"
 
 	"golang.org/x/net/context"
@@ -115,9 +117,19 @@ func mainAction(c *cli.Context) error {
 	redisWorkerPrefix := c.String("redis-worker-prefix")
 	core := cloudbrain.NewCore(db, redisPool, redisWorkerPrefix)
 
+	log.Print("starting worker pool")
+
 	workerPool := work.NewWorkerPool(struct{}{}, 10, redisWorkerPrefix, redisPool)
 	workerPool.JobWithOptions("remove", work.JobOptions{MaxFails: 10}, core.ProviderRemoveInstance)
 	workerPool.Start()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	sig := <-signalChan
+
+	log.Printf("signal %v received, stopping worker pool", sig)
+
+	workerPool.Stop()
 
 	return nil
 }
