@@ -124,7 +124,6 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 	var enqueuer = work.NewEnqueuer(c.redisWorkerPrefix, c.redisPool)
 
 	_, err = enqueuer.Enqueue("create", work.Q{
-		"context": ctx,
 		"payload": id,
 	})
 	if err != nil {
@@ -155,7 +154,6 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 	var enqueuer = work.NewEnqueuer(c.redisWorkerPrefix, c.redisPool)
 
 	_, err = enqueuer.Enqueue("remove", work.Q{
-		"context": ctx,
 		"payload": attr.InstanceID,
 	})
 
@@ -169,7 +167,7 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 // ProviderCreateInstance is used to schedule the creation of the instance with
 // the given ID on the provider selected for that instance.
 func (c *Core) ProviderCreateInstance(job *work.Job) error {
-	ctx := job.Args["context"].(context.Context)
+	ctx := context.TODO()
 	id := job.Args["payload"].(string)
 
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
@@ -232,7 +230,7 @@ func (c *Core) ProviderCreateInstance(job *work.Job) error {
 // ProviderRemoveInstance is used to schedule the creation of the instance with
 // the given ID on the provider selected for that instance.
 func (c *Core) ProviderRemoveInstance(job *work.Job) error {
-	ctx := job.Args["context"].(context.Context)
+	ctx := context.TODO()
 	id := job.Args["payload"].(string)
 
 	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
