@@ -1,12 +1,12 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/travis-ci/cloud-brain/cloudbrain"
-	"golang.org/x/net/context"
 )
 
 type authWrapper struct {

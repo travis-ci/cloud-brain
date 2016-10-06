@@ -1,6 +1,7 @@
 package cloudbrain
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/hex"
 	"fmt"
@@ -17,7 +18,6 @@ import (
 	"github.com/travis-ci/cloud-brain/cloud"
 	"github.com/travis-ci/cloud-brain/database"
 	"golang.org/x/crypto/scrypt"
-	"golang.org/x/net/context"
 	"gopkg.in/urfave/cli.v2"
 )
 

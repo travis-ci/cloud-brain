@@ -1,11 +1,10 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"

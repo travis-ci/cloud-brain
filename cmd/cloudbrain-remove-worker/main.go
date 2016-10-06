@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
@@ -8,8 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"

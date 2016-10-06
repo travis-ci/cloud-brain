@@ -1,13 +1,12 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
