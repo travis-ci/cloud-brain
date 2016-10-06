@@ -10,6 +10,10 @@ import (
 
 type contextKey int
 
+type WorkContext struct {
+	Context context.Context
+}
+
 const (
 	requestIDKey contextKey = iota
 )

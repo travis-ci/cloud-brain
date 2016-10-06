@@ -118,7 +118,7 @@ func mainAction(c *cli.Context) error {
 
 	log.Print("starting worker pool")
 
-	workerPool := work.NewWorkerPool(struct{}{}, 1, redisWorkerPrefix, redisPool)
+	workerPool := work.NewWorkerPool(cbcontext.WorkContext{Context: ctx}, 1, redisWorkerPrefix, redisPool)
 	workerPool.JobWithOptions("create", work.JobOptions{MaxFails: 10}, core.ProviderCreateInstance)
 	workerPool.Start()
 
