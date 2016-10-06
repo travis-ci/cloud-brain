@@ -1,18 +1,19 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"os"
+	"os/signal"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	"github.com/gocraft/work"
 	_ "github.com/lib/pq"
-	"github.com/travis-ci/cloud-brain/background"
 	"github.com/travis-ci/cloud-brain/cbcontext"
 	"github.com/travis-ci/cloud-brain/cloudbrain"
 	"github.com/travis-ci/cloud-brain/database"
@@ -95,12 +96,6 @@ func mainAction(c *cli.Context) error {
 		},
 	}
 
-	backgroundBackend := background.NewRedisBackend(redisPool, c.String("redis-worker-prefix"))
-	err := backgroundBackend.WaitForConnection()
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("background backend creation failed")
-	}
-
 	if c.String("database-url") == "" {
 		cbcontext.LoggerFromContext(ctx).Fatal("database-url flag is required")
 	}
@@ -118,11 +113,22 @@ func mainAction(c *cli.Context) error {
 
 	db := database.NewPostgresDB(encryptionKey, pgdb)
 
-	core := cloudbrain.NewCore(db, backgroundBackend)
+	redisWorkerPrefix := c.String("redis-worker-prefix")
+	core := cloudbrain.NewCore(db, redisPool, redisWorkerPrefix)
 
-	err = background.Run(ctx, "remove", backgroundBackend, background.WorkerFunc(core.ProviderRemoveInstance))
-	if err != nil {
-		cbcontext.LoggerFromContext(ctx).WithField("err", err).Fatal("remove worker crashed")
-	}
+	log.Print("starting worker pool")
+
+	workerPool := work.NewWorkerPool(struct{}{}, 1, redisWorkerPrefix, redisPool)
+	workerPool.JobWithOptions("remove", work.JobOptions{MaxFails: 10}, core.ProviderRemoveInstance)
+	workerPool.Start()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	sig := <-signalChan
+
+	log.Printf("signal %v received, stopping worker pool", sig)
+
+	workerPool.Stop()
+
 	return nil
 }

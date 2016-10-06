@@ -14,7 +14,6 @@ There are two main parts of Cloud Brain: An HTTP API, and a background worker. T
 
 The codebase is divided into a few different subpackages:
 
-- `background`: Contains a library for running jobs in background workers.
 - `cbcontext`: Contains some wrappers around the [context](http://godoc.org/golang.org/x/net/context) package, which is used all over the remainder of the codebase.
 - `cloud`: Contains the implementations for the various cloud providers.
 - `cloudbrain`: Contains the "main business logic". Should, generally speaking, be the main entry point for any API calls. The `http` package should only do HTTP-related things and then call this.

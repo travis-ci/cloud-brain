@@ -1,11 +1,11 @@
 package cbcontext
 
 import (
+	"context"
 	"os"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/getsentry/raven-go"
-	"golang.org/x/net/context"
 )
 
 type contextKey int

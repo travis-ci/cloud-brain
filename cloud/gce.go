@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,7 +19,6 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/mitchellh/multistep"
-	"golang.org/x/net/context"
 )
 
 var gceStartupScript = template.Must(template.New("gce-startup").Parse(`#!/usr/bin/env bash
