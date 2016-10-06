@@ -166,10 +166,11 @@ func (c *Core) RemoveInstance(ctx context.Context, attr DeleteInstanceAttributes
 
 // ProviderCreateInstance is used to schedule the creation of the instance with
 // the given ID on the provider selected for that instance.
-func (c *Core) ProviderCreateInstance(ctx *cbcontext.WorkContext, job *work.Job) error {
+func (c *Core) ProviderCreateInstance(job *work.Job) error {
+	ctx := context.TODO()
 	id := job.Args["payload"].(string)
 
-	cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 		"instance_id": id,
 	}).Info("creating instance")
 
@@ -189,7 +190,7 @@ func (c *Core) ProviderCreateInstance(ctx *cbcontext.WorkContext, job *work.Job)
 		PublicSSHKey: dbInstance.PublicSSHKey,
 	})
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 			"err":         err,
 			"instance_id": id,
 		}).Error("error creating instance")
@@ -199,7 +200,7 @@ func (c *Core) ProviderCreateInstance(ctx *cbcontext.WorkContext, job *work.Job)
 
 		err = c.db.UpdateInstance(dbInstance)
 		if err != nil {
-			cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+			cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 				"err":         err,
 				"instance_id": id,
 				"provider_id": instance.ID,
@@ -218,7 +219,7 @@ func (c *Core) ProviderCreateInstance(ctx *cbcontext.WorkContext, job *work.Job)
 		return errors.Wrap(err, "couldn't update instance in DB")
 	}
 
-	cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 		"instance_id": id,
 		"provider_id": instance.ID,
 	}).Info("created instance")
@@ -228,10 +229,11 @@ func (c *Core) ProviderCreateInstance(ctx *cbcontext.WorkContext, job *work.Job)
 
 // ProviderRemoveInstance is used to schedule the creation of the instance with
 // the given ID on the provider selected for that instance.
-func (c *Core) ProviderRemoveInstance(ctx *cbcontext.WorkContext, job *work.Job) error {
+func (c *Core) ProviderRemoveInstance(job *work.Job) error {
+	ctx := context.TODO()
 	id := job.Args["payload"].(string)
 
-	cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 		"instance_id": id,
 	}).Info("removing instance")
 
@@ -247,7 +249,7 @@ func (c *Core) ProviderRemoveInstance(ctx *cbcontext.WorkContext, job *work.Job)
 
 	err = cloudProvider.Destroy(id)
 	if err != nil {
-		cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+		cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 			"err":         err,
 			"instance_id": id,
 		}).Error("error removing instance")
@@ -261,7 +263,7 @@ func (c *Core) ProviderRemoveInstance(ctx *cbcontext.WorkContext, job *work.Job)
 		return errors.Wrap(err, "error updating instance state to terminating in DB")
 	}
 
-	cbcontext.LoggerFromContext(ctx.Context).WithFields(logrus.Fields{
+	cbcontext.LoggerFromContext(ctx).WithFields(logrus.Fields{
 		"instance_id": id,
 	}).Info("removed instance")
 
