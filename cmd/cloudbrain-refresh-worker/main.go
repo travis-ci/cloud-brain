@@ -128,7 +128,7 @@ func mainAction(c *cli.Context) error {
 			errorCount = 0
 		}
 
-		// TODO(henrikhodne): Make this configurable
+		// TODO(sarahhodne): Make this configurable
 		sleepTime := c.Duration("refresh-interval") * time.Duration(errorCount+1)
 		if sleepTime > 5*time.Minute {
 			sleepTime = 5 * time.Minute
