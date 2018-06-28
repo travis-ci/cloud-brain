@@ -157,7 +157,7 @@ func (db *PostgresDB) GetInstancesByState(state string) ([]Instance, error) {
 // the given attributes. Returns ErrInstanceNotFound if an instance with the
 // given ID isn't found.
 //
-// BUG(henrikhodne): ErrInstanceNotFound is not returned when an instance with
+// BUG(sarahhodne): ErrInstanceNotFound is not returned when an instance with
 // the given ID doesn't exist.
 func (db *PostgresDB) UpdateInstance(instance Instance) error {
 	_, err := db.db.Exec(
@@ -189,7 +189,7 @@ func (db *PostgresDB) UpdateInstance(instance Instance) error {
 // GetSaltAndHashForTokenID returns the salt and hash for the token with the
 // given ID.
 //
-// BUG(henrikhodne): Should return a special error if no token with the given
+// BUG(sarahhodne): Should return a special error if no token with the given
 // ID exists.
 func (db *PostgresDB) GetSaltAndHashForTokenID(tokenID uint64) (salt []byte, hash []byte, err error) {
 	err = db.db.QueryRow(

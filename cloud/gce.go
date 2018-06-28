@@ -246,7 +246,7 @@ func (p *GCEProvider) Create(id string, attr CreateAttributes) (Instance, error)
 	abandonedStart := false
 	defer func(c *gceStartContext) {
 		if c.instance != nil && abandonedStart {
-			// TODO(henrikhodne): Can we remove this, or queue a delete job instead?
+			// TODO(sarahhodne): Can we remove this, or queue a delete job instead?
 			_, _ = p.client.Instances.Delete(p.projectID, p.ic.Zone.Name, c.instance.Name).Do()
 		}
 	}(c)

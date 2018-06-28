@@ -107,7 +107,7 @@ func (db *MemoryDatabase) UpdateInstance(instance Instance) error {
 // GetSaltAndHashForTokenID returns the salt and hash for a token with the given
 // ID. Panics if the token doesn't exist.
 func (db *MemoryDatabase) GetSaltAndHashForTokenID(tokenID uint64) ([]byte, []byte, error) {
-	// TODO(henrikhodne): return an error if token doesn't exist
+	// TODO(sarahhodne): return an error if token doesn't exist
 	token := db.tokens[tokenID]
 
 	return token.Salt, token.Hash, nil

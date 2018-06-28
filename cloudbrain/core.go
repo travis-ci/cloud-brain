@@ -127,7 +127,7 @@ func (c *Core) CreateInstance(ctx context.Context, providerName string, attr Cre
 		"payload": id,
 	})
 	if err != nil {
-		// TODO(henrikhodne): Delete the record in the database?
+		// TODO(sarahhodne): Delete the record in the database?
 		return nil, errors.Wrap(err, "error enqueueing 'create' job in the background")
 	}
 
